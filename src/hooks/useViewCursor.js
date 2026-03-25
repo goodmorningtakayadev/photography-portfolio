@@ -4,56 +4,67 @@ import { useRef, useEffect } from 'react';
  * Adds the "VIEW" custom cursor to any container.
  * Returns { containerRef, cursorRef } — attach both to your JSX.
  * The cursor appears when hovering over the container and trails the mouse.
+ *
+ * Animation state is stored in a ref so re-renders (e.g. from sibling hover
+ * state changes) don't interrupt the cursor animation loop.
  */
 export function useViewCursor() {
   const containerRef = useRef(null);
   const cursorRef = useRef(null);
+  const state = useRef({ raf: 0, cx: 0, cy: 0, tx: 0, ty: 0, active: false });
 
   useEffect(() => {
     const container = containerRef.current;
     const cursor = cursorRef.current;
     if (!container || !cursor) return;
 
-    let raf;
-    let cx = 0, cy = 0, tx = 0, ty = 0;
-    let initialized = false;
+    const s = state.current;
 
     const animate = () => {
-      cx += (tx - cx) * 0.25;
-      cy += (ty - cy) * 0.25;
-      cursor.style.left = cx + 'px';
-      cursor.style.top = cy + 'px';
-      raf = requestAnimationFrame(animate);
+      s.cx += (s.tx - s.cx) * 0.25;
+      s.cy += (s.ty - s.cy) * 0.25;
+      cursor.style.left = s.cx + 'px';
+      cursor.style.top = s.cy + 'px';
+      s.raf = requestAnimationFrame(animate);
     };
 
-    const move = (e) => {
-      tx = e.clientX;
-      ty = e.clientY;
-      if (!initialized) {
-        cx = tx;
-        cy = ty;
-        cursor.style.left = cx + 'px';
-        cursor.style.top = cy + 'px';
-        initialized = true;
+    const ensureRunning = () => {
+      if (!s.active) {
+        s.active = true;
+        cursor.classList.add('vis');
+        cancelAnimationFrame(s.raf);
+        s.raf = requestAnimationFrame(animate);
       }
     };
 
+    const move = (e) => {
+      s.tx = e.clientX;
+      s.ty = e.clientY;
+      // On first move (or after re-attach), snap position to avoid jump
+      if (!s.active) {
+        s.cx = s.tx;
+        s.cy = s.ty;
+        cursor.style.left = s.cx + 'px';
+        cursor.style.top = s.cy + 'px';
+      }
+      // Restart loop if effect cleanup killed it mid-hover
+      ensureRunning();
+    };
+
     const enter = (e) => {
-      tx = e.clientX;
-      ty = e.clientY;
-      cx = tx;
-      cy = ty;
-      cursor.style.left = cx + 'px';
-      cursor.style.top = cy + 'px';
-      initialized = true;
-      cursor.classList.add('vis');
-      raf = requestAnimationFrame(animate);
+      s.tx = e.clientX;
+      s.ty = e.clientY;
+      s.cx = s.tx;
+      s.cy = s.ty;
+      cursor.style.left = s.cx + 'px';
+      cursor.style.top = s.cy + 'px';
+      ensureRunning();
     };
 
     const leave = () => {
       cursor.classList.remove('vis');
-      cancelAnimationFrame(raf);
-      initialized = false;
+      cancelAnimationFrame(s.raf);
+      s.active = false;
     };
 
     container.addEventListener('mousemove', move);
@@ -61,7 +72,8 @@ export function useViewCursor() {
     container.addEventListener('mouseleave', leave);
 
     return () => {
-      cancelAnimationFrame(raf);
+      cancelAnimationFrame(s.raf);
+      s.active = false;
       container.removeEventListener('mousemove', move);
       container.removeEventListener('mouseenter', enter);
       container.removeEventListener('mouseleave', leave);
