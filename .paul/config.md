@@ -1,7 +1,7 @@
 # Project Config
 
 **Project:** photography-portfolio
-**Created:** 2026-03-23
+**Created:** 2026-03-25
 
 ## Project Settings
 
@@ -17,8 +17,7 @@ project:
 
 ```yaml
 sonarqube:
-  enabled: true
-  project_key: photography-portfolio
+  enabled: false
 ```
 
 ### Enterprise Plan Audit
@@ -37,4 +36,4 @@ preferences:
 ```
 
 ---
-*Config created: 2026-03-23*
+*Config created: 2026-03-25*

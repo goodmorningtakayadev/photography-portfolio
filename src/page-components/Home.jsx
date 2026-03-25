@@ -1,5 +1,7 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import EditorialSpread from '../components/EditorialSpread';
 import Lightbox from '../components/Lightbox';
 import { useRevealAll } from '../hooks/useReveal';
@@ -134,7 +136,7 @@ const Home = () => {
             <p className="hero-desc">
               I take photos here and there.
             </p>
-            <Link to="/gallery" className="hero-cta">
+            <Link href="/gallery" className="hero-cta">
               <span className="hero-cta-text">Explore Gallery</span>
               <span className="hero-cta-arrow">
                 <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
@@ -182,7 +184,7 @@ const Home = () => {
             return (
               <Link
                 key={cat.id}
-                to={`/gallery?category=${cat.id}`}
+                href={`/gallery?category=${cat.id}`}
                 className={`cat-card reveal reveal-d${i + 1}`}
               >
                 <div className="cat-img-wrap">
@@ -215,7 +217,7 @@ const Home = () => {
             LET'S WORK<br /><span className="cta-stroke">TOGETHER</span>
           </h2>
           <p className="cta-desc">Available for commissions, collaborations, and creative projects.</p>
-          <Link to="/about" className="cta-btn">
+          <Link href="/about" className="cta-btn">
             <span className="cta-btn-text">GET IN TOUCH</span>
             <span className="cta-btn-icon">
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.2">
@@ -228,7 +230,7 @@ const Home = () => {
 
       {selectedPhoto && (
         <Lightbox
-          photo={selectedPhoto}
+          phohref={selectedPhoto}
           photos={featuredPhotos}
           onClose={() => setSelectedPhoto(null)}
           onNavigate={(p) => setSelectedPhoto(p)}

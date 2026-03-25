@@ -1,8 +1,11 @@
+'use client';
+
 import { useEffect, useCallback } from 'react';
 import { getImageUrl, getFallbackUrl, getAltText } from '../../utils/imageHelpers';
 import './Lightbox.css';
 
 const Lightbox = ({ photo, photos, onClose, onNavigate }) => {
+  if (!photo || !photos || photos.length === 0) return null;
   const idx = photos.findIndex(p => p.id === photo.id);
 
   const prev = useCallback(() => { if (idx > 0) onNavigate(photos[idx - 1]); }, [idx, photos, onNavigate]);

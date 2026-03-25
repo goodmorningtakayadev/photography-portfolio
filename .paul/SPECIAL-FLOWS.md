@@ -1,23 +1,20 @@
-# Specialized Flows
+# Special Flows
 
-## Project-Level Dependencies
+## Configured Skills
 
-| Work Type | Skill/Command | Priority | When Required |
-|-----------|---------------|----------|---------------|
-| UI components, pages, layouts, front-end work | /frontend-design | required | Before writing HTML, when creating a page, when editing HTML and CSS |
-| Aesthetic design, CSS editing, typography, UX | /ui-ux-pro-max | required | When writing HTML and CSS or designing pages |
-| Visual decisions, color choices, layout direction | /bencium-controlled-ux-designer | required | Whenever the user interface or user experience is affected |
+| Skill | Trigger | When to Invoke |
+|-------|---------|----------------|
+| `/frontend-design` | Building UI components, pages, or interfaces | When creating new public or admin UI that needs distinctive, production-grade design |
+| `/ui-ux-pro-max` | UI structure, visual design decisions, interaction patterns | When making style/color/typography/layout decisions, reviewing UI code, or implementing responsive behavior |
+| `/bencium-controlled-ux-designer` | Design decision collaboration | When design decisions need to be made (colors, fonts, layouts) — always ask before implementing |
 
-## Phase Overrides
+## Usage Rules
 
-None configured.
-
-## Templates & Assets
-
-| Asset Type | Location | When Used |
-|------------|----------|-----------|
-| Aesthetic mood board | https://www.pinterest.com/pin/3096293491592667/ | When making design decisions and UI planning |
+1. When a plan involves creating or modifying UI components, invoke `/frontend-design` for implementation
+2. When a plan involves design system decisions (style, color, typography), invoke `/ui-ux-pro-max` for recommendations
+3. When making visual design choices, invoke `/bencium-controlled-ux-designer` to present options and get approval before implementing
+4. Admin pages use their own design — these skills apply to both public and admin UI
+5. Public pages must preserve existing design pixel-identical — only invoke these skills for new UI (admin) or when explicitly redesigning
 
 ---
-*Configured: 2026-03-23*
-*Last updated: 2026-03-23*
+*Created: 2026-03-25*

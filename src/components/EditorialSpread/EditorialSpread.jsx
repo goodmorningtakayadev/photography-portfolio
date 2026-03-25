@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { useRevealAll } from '../../hooks/useReveal';
 import { useViewCursor } from '../../hooks/useViewCursor';

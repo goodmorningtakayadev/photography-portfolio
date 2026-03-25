@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
 import './Footer.css';
 
 const Footer = () => {
@@ -9,7 +11,7 @@ const Footer = () => {
       <div className="ft-inner">
         <div className="ft-top">
           <div className="ft-brand">
-            <Link to="/" className="ft-logo">
+            <Link href="/" className="ft-logo">
               <span className="ft-logo-glyph">P</span>
               <span className="ft-logo-slash">/</span>
               <span className="ft-logo-sub">FOLIO</span>
@@ -18,9 +20,9 @@ const Footer = () => {
 
           <nav className="ft-col">
             <span className="ft-heading mono">NAVIGATE</span>
-            <Link to="/">Home</Link>
-            <Link to="/gallery">Gallery</Link>
-            <Link to="/about">About</Link>
+            <Link href="/">Home</Link>
+            <Link href="/gallery">Gallery</Link>
+            <Link href="/about">About</Link>
           </nav>
 
           <div className="ft-col">

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef, useEffect, useCallback } from 'react';
 import './ContactForm.css';
 
@@ -84,9 +86,9 @@ const ContactForm = () => {
       return;
     }
 
-    const accessKey = import.meta.env.VITE_WEB3FORMS_KEY;
+    const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
     if (!accessKey) {
-      console.error('[ContactForm] VITE_WEB3FORMS_KEY is not set');
+      console.error('[ContactForm] NEXT_PUBLIC_WEB3FORMS_KEY is not set');
       setStatus('error');
       setErrorMessage('Contact form is not configured. Please try again later.');
       return;

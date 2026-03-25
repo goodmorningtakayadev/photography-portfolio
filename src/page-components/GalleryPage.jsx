@@ -1,5 +1,7 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Gallery from '../components/Gallery';
 import CategoryFilter from '../components/CategoryFilter';
 import Lightbox from '../components/Lightbox';
@@ -24,7 +26,8 @@ function formatCollectionDate(dateStr) {
 }
 
 const GalleryPage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [filteredPhotos, setFilteredPhotos] = useState(publishedPhotos);
@@ -71,17 +74,17 @@ const GalleryPage = () => {
   const handleCategory = (cat) => {
     setActiveCategory(cat);
     setSelectedCollection(null);
-    setSearchParams(cat === 'all' ? {} : { category: cat });
+    router.replace(cat === 'all' ? '/gallery' : '/gallery?' + new URLSearchParams({ category: cat }).toString());
   };
 
   const handleCollectionClick = (collection) => {
     setSelectedCollection(collection);
-    setSearchParams({ category: 'projects', collection: collection.id });
+    router.replace('/gallery?' + new URLSearchParams({ category: 'projects', collection: collection.id }).toString());
   };
 
   const handleBackToProjects = () => {
     setSelectedCollection(null);
-    setSearchParams({ category: 'projects' });
+    router.replace('/gallery?' + new URLSearchParams({ category: 'projects' }).toString());
   };
 
   const handleLightboxClose = useCallback(() => {

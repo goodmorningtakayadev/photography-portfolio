@@ -66,7 +66,7 @@ export function useViewCursor() {
       container.removeEventListener('mouseenter', enter);
       container.removeEventListener('mouseleave', leave);
     };
-  }, []);
+  });
 
   return { containerRef, cursorRef };
 }

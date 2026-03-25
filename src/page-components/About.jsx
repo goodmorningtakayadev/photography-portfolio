@@ -1,3 +1,5 @@
+'use client';
+
 import { useRevealAll } from '../hooks/useReveal';
 import { useViewCursor } from '../hooks/useViewCursor';
 import ContactForm from '../components/ContactForm/ContactForm';

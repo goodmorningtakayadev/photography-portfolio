@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { useViewCursor } from '../../hooks/useViewCursor';
 import { getImageUrl, getImageSrcSet, getFallbackUrl, getAltText } from '../../utils/imageHelpers';

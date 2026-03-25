@@ -1,5 +1,8 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import './Header.css';
 
 const NAV_LINKS = [
@@ -9,13 +12,13 @@ const NAV_LINKS = [
 ];
 
 const Header = () => {
-  const location = useLocation();
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [lastY, setLastY] = useState(0);
   const [sweep, setSweep] = useState({ entering: null, exiting: null, dir: null });
-  const prevPath = useRef(location.pathname);
+  const prevPath = useRef(pathname);
 
   useEffect(() => {
     const onScroll = () => {
@@ -29,22 +32,22 @@ const Header = () => {
   }, [lastY]);
 
   useEffect(() => {
-    if (prevPath.current !== location.pathname) {
+    if (prevPath.current !== pathname) {
       const oldPath = prevPath.current;
-      prevPath.current = location.pathname;
+      prevPath.current = pathname;
       const oldIdx = NAV_LINKS.findIndex(l => l.to === oldPath);
-      const newIdx = NAV_LINKS.findIndex(l => l.to === location.pathname);
+      const newIdx = NAV_LINKS.findIndex(l => l.to === pathname);
 
       if (oldIdx !== -1 && newIdx !== -1) {
         const dir = newIdx > oldIdx ? 'right' : 'left';
-        setSweep({ entering: location.pathname, exiting: oldPath, dir });
+        setSweep({ entering: pathname, exiting: oldPath, dir });
         const timer = setTimeout(() => setSweep({ entering: null, exiting: null, dir: null }), 425);
         return () => clearTimeout(timer);
       }
     }
-  }, [location.pathname]);
+  }, [pathname]);
 
-  useEffect(() => setMenuOpen(false), [location]);
+  useEffect(() => setMenuOpen(false), [pathname]);
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -54,7 +57,7 @@ const Header = () => {
     <>
       <header className={`hdr ${scrolled ? 'hdr--scrolled' : ''} ${hidden ? 'hdr--hidden' : ''}`}>
         <div className="hdr-inner">
-          <Link to="/" className="hdr-logo">
+          <Link href="/" className="hdr-logo">
             <span className="hdr-logo-glyph">P</span>
             <span className="hdr-logo-slash">/</span>
             <span className="hdr-logo-sub">FOLIO</span>
@@ -67,7 +70,7 @@ const Header = () => {
               else if (sweep.exiting === to) sweepClass = `exit-${sweep.dir}`;
 
               return (
-                <Link key={to} to={to} className={`hdr-link ${location.pathname === to ? 'active' : ''} ${sweepClass}`}>
+                <Link key={to} href={to} className={`hdr-link ${pathname === to ? 'active' : ''} ${sweepClass}`}>
                   <span className="hdr-link-text">{label}</span>
                 </Link>
               );
@@ -91,12 +94,12 @@ const Header = () => {
           {NAV_LINKS.map(({ to, label }, i) => (
             <Link
               key={to}
-              to={to}
-              className={`menu-link ${location.pathname === to ? 'active' : ''}`}
+              href={to}
+              className={`menu-link ${pathname === to ? 'active' : ''}`}
               style={{ transitionDelay: menuOpen ? `${0.2 + i * 0.12}s` : '0s' }}
             >
               <span className="menu-label">{label}</span>
-              {location.pathname === to && <span className="menu-active-bar" />}
+              {pathname === to && <span className="menu-active-bar" />}
             </Link>
           ))}
         </nav>
