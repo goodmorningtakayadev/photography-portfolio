@@ -1,0 +1,253 @@
+{
+  "categories": [
+    {
+      "id": "portraits",
+      "name": "Portraits",
+      "description": "Faces",
+      "coverPhoto": "4"
+    },
+    {
+      "id": "street",
+      "name": "Street",
+      "description": "Life unfolding in the urban landscape",
+      "coverPhoto": "9"
+    },
+    {
+      "id": "travel",
+      "name": "Travel",
+      "description": "Stories from around the world",
+      "coverPhoto": "10"
+    }
+  ],
+  "photos": [
+    {
+      "id": "1",
+      "title": "Shannon Film I",
+      "category": "portraits",
+      "url": "/photos/shannon-film-6-1.jpg",
+      "thumbnail": "/photos/shannon-film-6-1.jpg",
+      "aspectRatio": "portrait",
+      "featured": true,
+      "heroImage": false,
+      "date": "2024-01-15",
+      "description": "A portrait captured on analog film with rich tones and natural grain",
+      "tags": [
+        "film",
+        "portrait",
+        "analog"
+      ],
+      "order": 1,
+      "published": true
+    },
+    {
+      "id": "2",
+      "title": "Gold Tone I",
+      "category": "portraits",
+      "url": "/photos/shannon-film-gold-tone-1.jpg",
+      "thumbnail": "/photos/shannon-film-gold-tone-1.jpg",
+      "aspectRatio": "portrait",
+      "featured": true,
+      "heroImage": false,
+      "date": "2024-02-20",
+      "description": "Warm golden tones on film with soft directional lighting",
+      "tags": [
+        "film",
+        "portrait",
+        "gold",
+        "warm"
+      ],
+      "order": 2,
+      "published": true
+    },
+    {
+      "id": "3",
+      "title": "Gold Tone II",
+      "category": "portraits",
+      "url": "/photos/shannon-film-gold-tone-2.jpg",
+      "thumbnail": "/photos/shannon-film-gold-tone-2.jpg",
+      "aspectRatio": "portrait",
+      "featured": true,
+      "heroImage": false,
+      "date": "2024-03-10",
+      "description": "Continuation of the gold tone series with deeper contrast",
+      "tags": [
+        "film",
+        "portrait",
+        "gold",
+        "series"
+      ],
+      "order": 3,
+      "published": true
+    },
+    {
+      "id": "4",
+      "title": "Shannon Portraits",
+      "category": "portraits",
+      "url": "/photos/shannon-more-ports-5.jpg",
+      "thumbnail": "/photos/shannon-more-ports-5.jpg",
+      "aspectRatio": "portrait",
+      "featured": true,
+      "heroImage": false,
+      "date": "2024-02-28",
+      "description": "Natural portrait session capturing candid expression",
+      "tags": [
+        "portrait",
+        "natural",
+        "candid"
+      ],
+      "order": 4,
+      "published": true
+    },
+    {
+      "id": "5",
+      "title": "Mountain",
+      "category": "travel",
+      "url": "/photos/mountain.jpg",
+      "thumbnail": "/photos/mountain.jpg",
+      "aspectRatio": "landscape",
+      "featured": true,
+      "heroImage": false,
+      "date": "2024-03-20",
+      "description": "Expansive mountain landscape under dramatic skies",
+      "tags": [
+        "landscape",
+        "mountain",
+        "nature"
+      ],
+      "order": 5,
+      "published": true
+    },
+    {
+      "id": "6",
+      "title": "Vintage Aesthetics",
+      "category": "portraits",
+      "url": "/photos/vintage-aesthetics-3.jpg",
+      "thumbnail": "/photos/vintage-aesthetics-3.jpg",
+      "aspectRatio": "portrait",
+      "featured": true,
+      "heroImage": true,
+      "date": "2024-04-05",
+      "description": "Vintage-inspired film aesthetic with muted tones and soft focus",
+      "tags": [
+        "film",
+        "vintage",
+        "aesthetic",
+        "muted"
+      ],
+      "order": 6,
+      "published": true
+    },
+    {
+      "id": "7",
+      "title": "Me",
+      "category": "portraits",
+      "url": "/photos/takaya-studio-3-1-2.jpg",
+      "thumbnail": "/photos/takaya-studio-3-1-2.jpg",
+      "aspectRatio": "portrait",
+      "featured": false,
+      "heroImage": false,
+      "date": "2026-03-23",
+      "description": "",
+      "tags": [],
+      "order": 7,
+      "published": true
+    },
+    {
+      "id": "8",
+      "title": "Me Japan",
+      "category": "portraits",
+      "url": "/photos/japan-bw-4.jpg",
+      "thumbnail": "/photos/japan-bw-4.jpg",
+      "aspectRatio": "landscape",
+      "featured": false,
+      "heroImage": false,
+      "date": "2026-03-23",
+      "description": "",
+      "tags": [],
+      "order": 8,
+      "published": true
+    },
+    {
+      "id": "9",
+      "title": "Break Time",
+      "category": "street",
+      "url": "/photos/china-town-film-13.jpg",
+      "thumbnail": "/photos/china-town-film-13.jpg",
+      "aspectRatio": "portrait",
+      "featured": false,
+      "heroImage": false,
+      "date": "2026-03-24",
+      "description": "",
+      "tags": [],
+      "order": 9,
+      "published": true
+    },
+    {
+      "id": "10",
+      "title": "Buildings",
+      "category": "travel",
+      "url": "/photos/building-bronze-2.jpg",
+      "thumbnail": "/photos/building-bronze-2.jpg",
+      "aspectRatio": "landscape",
+      "featured": true,
+      "heroImage": false,
+      "date": "2026-03-24",
+      "description": "",
+      "tags": [],
+      "order": 10,
+      "published": true
+    }
+  ],
+  "collections": [
+    {
+      "id": "shannon-sessions",
+      "name": "Shannon",
+      "description": "Exploring contrast, form and light with a dancer",
+      "coverPhotoId": "1",
+      "photoIds": [
+        "1",
+        "2",
+        "3"
+      ],
+      "date": "2024-02",
+      "tags": [
+        "film",
+        "gold",
+        "series",
+        "analog"
+      ]
+    },
+    {
+      "id": "japan-sessions",
+      "name": "\"Business\" in Japan",
+      "description": "Got lost in Nagoya instead of working",
+      "coverPhotoId": "10",
+      "photoIds": [
+        "10"
+      ],
+      "date": "2024-01",
+      "tags": [
+        "portrait",
+        "film",
+        "sessions",
+        "shannon"
+      ]
+    },
+    {
+      "id": "chinatown-sessions",
+      "name": "China Town",
+      "description": "A little glimpse of the big LA",
+      "coverPhotoId": "9",
+      "photoIds": [
+        "9"
+      ],
+      "date": "2024-04",
+      "tags": [
+        "film",
+        "analog",
+        "vintage",
+        "grain"
+      ]
+    }
+  ]
+}

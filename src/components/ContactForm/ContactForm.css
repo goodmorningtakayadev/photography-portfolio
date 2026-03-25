@@ -1,0 +1,185 @@
+/* ══ CONTACT FORM ══ */
+
+.contact-form {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+/* Honeypot — invisible to users */
+.contact-form-honeypot {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ── Field Group ── */
+.cf-field {
+  margin-bottom: 1.5rem;
+}
+
+.cf-label {
+  display: block;
+  font-size: 0.5rem;
+  letter-spacing: 0.3em;
+  color: var(--white-ghost);
+  margin-bottom: 0.5rem;
+}
+
+/* ── Inputs ── */
+.cf-input,
+.cf-textarea {
+  width: 100%;
+  font-family: var(--f-body);
+  font-size: 0.9rem;
+  color: var(--white);
+  background: var(--black-elevated);
+  border: 1px solid var(--border);
+  padding: 0.875rem 1rem;
+  transition:
+    border-color var(--t-base) var(--ease-out),
+    box-shadow var(--t-base) var(--ease-out);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.cf-input::placeholder,
+.cf-textarea::placeholder {
+  color: var(--white-ghost);
+  opacity: 0.6;
+}
+
+.cf-input:focus,
+.cf-textarea:focus {
+  border-color: var(--ember);
+  box-shadow: 0 0 0 2px var(--ember-glow);
+}
+
+.cf-input:disabled,
+.cf-textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Error State ── */
+.cf-input-error {
+  border-color: var(--ember);
+}
+
+.cf-error {
+  display: block;
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: var(--ember);
+  margin-top: 0.4rem;
+}
+
+/* ── Textarea ── */
+.cf-textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.7;
+}
+
+/* ── Submit Button ── */
+.cf-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1rem 2rem;
+  min-height: 48px;
+  font-family: var(--f-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--black);
+  background: var(--ember);
+  border: none;
+  cursor: pointer;
+  transition:
+    background var(--t-fast) var(--ease-out),
+    box-shadow var(--t-base) var(--ease-out),
+    opacity var(--t-fast);
+}
+
+.cf-submit:hover:not(:disabled) {
+  background: var(--ember-hot);
+  box-shadow: 0 0 24px var(--ember-glow);
+}
+
+.cf-submit:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+
+.cf-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ── Loading Spinner ── */
+.cf-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--black);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: cf-spin 0.6s linear infinite;
+}
+
+@keyframes cf-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Status Messages ── */
+.cf-status {
+  margin-top: 1rem;
+  min-height: 1.5rem;
+}
+
+.cf-status-success {
+  font-family: var(--f-body);
+  font-size: 0.85rem;
+  color: #6ee7b7;
+  margin: 0;
+}
+
+.cf-status-error {
+  font-family: var(--f-body);
+  font-size: 0.85rem;
+  color: var(--ember);
+  margin: 0;
+}
+
+/* ── Privacy Notice ── */
+.cf-privacy {
+  font-size: 0.45rem;
+  letter-spacing: 0.15em;
+  color: var(--white-ghost);
+  opacity: 0.7;
+  margin-top: 1rem;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ══ RESPONSIVE ══ */
+@media (max-width: 768px) {
+  .cf-input,
+  .cf-textarea {
+    font-size: 1rem; /* Prevents iOS zoom on focus */
+    padding: 1rem;
+  }
+
+  .cf-submit {
+    padding: 1.1rem 2rem;
+    min-height: 52px;
+  }
+}

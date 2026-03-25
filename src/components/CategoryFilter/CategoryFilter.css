@@ -1,0 +1,52 @@
+/* ══ CATEGORY FILTER ══ */
+.cf {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  padding: 1.5rem var(--s-page);
+  margin: 2rem 0;
+}
+
+.cf-btn {
+  padding: 0.6rem 1.5rem;
+  font-family: var(--f-mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--white-ghost);
+  position: relative;
+  transition: color var(--t-fast);
+}
+
+.cf-btn:hover {
+  color: var(--white);
+}
+
+.cf-btn.active {
+  color: var(--ember);
+}
+
+.cf-btn-bar {
+  position: absolute;
+  bottom: 0.2rem;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 20px;
+  height: 2px;
+  background: var(--ember);
+  transition: transform var(--t-base) var(--ease-out);
+}
+
+.cf-btn.active .cf-btn-bar {
+  transform: translateX(-50%) scaleX(1);
+}
+
+@media (max-width: 768px) {
+  .cf-btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.5rem;
+  }
+}

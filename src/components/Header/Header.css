@@ -1,0 +1,298 @@
+/* ══ HEADER ══ */
+.hdr {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: rgba(11, 11, 11, 0.6);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border-bottom: 1px solid transparent;
+  transition: transform var(--t-base) var(--ease-smooth),
+              background var(--t-base),
+              border-color var(--t-base);
+}
+
+.hdr--scrolled {
+  background: rgba(11, 11, 11, 0.9);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom-color: var(--border);
+}
+
+.hdr--hidden {
+  transform: translateY(-100%);
+}
+
+.hdr-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 1.5rem var(--s-page);
+  min-height: var(--header-h);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Logo */
+.hdr-logo {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  z-index: 201;
+}
+
+.hdr-logo-glyph {
+  font-family: var(--f-display);
+  font-size: 1.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--white);
+  line-height: 1;
+}
+
+.hdr-logo-slash {
+  font-family: var(--f-mono);
+  font-size: 1rem;
+  color: var(--ember);
+  margin: 0 2px;
+}
+
+.hdr-logo-sub {
+  font-family: var(--f-mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  color: var(--white-ghost);
+}
+
+
+/* Nav */
+.hdr-nav {
+  display: flex;
+  gap: 2.5rem;
+}
+
+.hdr-link {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  position: relative;
+  padding: 0.25rem 0;
+}
+
+.hdr-link-num {
+  font-family: var(--f-mono);
+  font-size: 0.55rem;
+  color: var(--white-ghost);
+  transition: color var(--t-fast);
+}
+
+.hdr-link-text {
+  font-family: var(--f-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--white-dim);
+  transition: color var(--t-fast);
+}
+
+.hdr-link:hover .hdr-link-text {
+  color: var(--white);
+}
+
+.hdr-link.active .hdr-link-text {
+  color: var(--ember);
+}
+
+.hdr-link:hover .hdr-link-num,
+.hdr-link.active .hdr-link-num {
+  color: var(--ember);
+}
+
+/* ── Directional color sweep ── */
+.hdr-link.enter-right .hdr-link-text,
+.hdr-link.exit-right .hdr-link-text,
+.hdr-link.enter-left .hdr-link-text,
+.hdr-link.exit-left .hdr-link-text {
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Rightward: ember sweeps left → right */
+.hdr-link.enter-right .hdr-link-text {
+  background-image: linear-gradient(90deg, var(--ember) 45%, var(--white-dim) 55%);
+  animation: sweep-r 0.375s ease-out forwards;
+}
+.hdr-link.exit-right .hdr-link-text {
+  background-image: linear-gradient(90deg, var(--white-dim) 45%, var(--ember) 55%);
+  animation: sweep-r 0.375s ease-out forwards;
+}
+
+/* Leftward: ember sweeps right → left */
+.hdr-link.enter-left .hdr-link-text {
+  background-image: linear-gradient(90deg, var(--white-dim) 45%, var(--ember) 55%);
+  animation: sweep-l 0.375s ease-out forwards;
+}
+.hdr-link.exit-left .hdr-link-text {
+  background-image: linear-gradient(90deg, var(--ember) 45%, var(--white-dim) 55%);
+  animation: sweep-l 0.375s ease-out forwards;
+}
+
+@keyframes sweep-r {
+  from { background-position: 100% 0; }
+  to { background-position: 0% 0; }
+}
+
+@keyframes sweep-l {
+  from { background-position: 0% 0; }
+  to { background-position: 100% 0; }
+}
+
+/* Burger */
+.hdr-burger {
+  display: none;
+  width: 32px;
+  height: 18px;
+  position: relative;
+  z-index: 201;
+}
+
+.hdr-burger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--white);
+  position: absolute;
+  left: 0;
+  transition: all var(--t-base) var(--ease-smooth);
+}
+
+.hdr-burger span:first-child { top: 0; }
+.hdr-burger span:last-child { bottom: 0; width: 60%; }
+
+.hdr-burger.open span:first-child {
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+}
+.hdr-burger.open span:last-child {
+  bottom: 50%;
+  width: 100%;
+  transform: translateY(50%) rotate(-45deg);
+}
+
+/* ══ OVERLAY MENU ══ */
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  pointer-events: none;
+}
+
+.menu-overlay.is-open { pointer-events: all; }
+
+.menu-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--black);
+  opacity: 0;
+  transition: opacity var(--t-base) var(--ease-smooth);
+}
+
+.menu-overlay.is-open .menu-backdrop { opacity: 1; }
+
+.menu-nav {
+  position: absolute;
+  top: 50%;
+  left: var(--s-page);
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.menu-link {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity var(--t-base) var(--ease-out),
+              transform var(--t-base) var(--ease-out);
+}
+
+.menu-overlay.is-open .menu-link {
+  opacity: 1;
+  transform: none;
+}
+
+.menu-num {
+  font-family: var(--f-mono);
+  font-size: 0.6rem;
+  color: var(--white-ghost);
+  min-width: 1.5rem;
+}
+
+.menu-label {
+  font-family: var(--f-display);
+  font-size: clamp(4rem, 14vw, 7rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--white);
+  line-height: 1;
+  transition: color var(--t-fast),
+              -webkit-text-stroke var(--t-fast);
+}
+
+.menu-link:hover .menu-label {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ember);
+}
+
+.menu-link.active .menu-label {
+  color: var(--ember);
+}
+
+.menu-active-bar {
+  width: 24px;
+  height: 3px;
+  background: var(--ember);
+}
+
+.menu-bottom {
+  position: absolute;
+  bottom: 2.5rem;
+  left: var(--s-page);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  opacity: 0;
+  transition: opacity var(--t-base) var(--ease-smooth);
+}
+
+.menu-overlay.is-open .menu-bottom { opacity: 1; }
+
+.menu-bottom-line {
+  width: 30px;
+  height: 1px;
+  background: var(--white-ghost);
+}
+
+.menu-email {
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  color: var(--white-dim);
+  letter-spacing: 0.02em;
+  transition: color var(--t-fast);
+}
+
+.menu-email:hover { color: var(--ember); }
+
+@media (max-width: 768px) {
+  .hdr-nav { display: none; }
+  .hdr-burger { display: block; }
+}
