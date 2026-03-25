@@ -10,20 +10,31 @@
     "optimize-images": "node scripts/optimize-images.js",
     "add-photo": "node scripts/manage-content.js add-photo",
     "add-collection": "node scripts/manage-content.js add-collection",
-    "manage-content": "node scripts/manage-content.js manage"
+    "manage-content": "node scripts/manage-content.js manage",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "drizzle-orm": "^0.45.1",
     "next": "^15.3.2",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.4",
     "@types/node": "25.5.0",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@types/ws": "^8.18.1",
+    "drizzle-kit": "^0.31.10",
     "sharp": "^0.34.5",
     "tailwindcss": "^4.1.4",
-    "typescript": "^5.8.3"
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.3",
+    "ws": "^8.20.0"
   }
 }

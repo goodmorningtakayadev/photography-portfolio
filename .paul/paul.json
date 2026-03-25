@@ -7,8 +7,8 @@
     "status": "in_progress"
   },
   "phase": {
-    "number": 1,
-    "name": "Next.js App Router Migration",
+    "number": 2,
+    "name": "Database & Schema",
     "status": "complete"
   },
   "loop": {

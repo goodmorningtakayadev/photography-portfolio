@@ -6,14 +6,14 @@ Refactor the existing Vite+React photography portfolio SPA into a Next.js App Ro
 ## Current Milestone
 **v1.0 Next.js + CMS Refactor** (v1.0.0)
 Status: In progress
-Phases: 1 of 7 complete
+Phases: 2 of 7 complete
 
 ## Phases
 
 | Phase | Name | Plans | Status | Completed |
 |-------|------|-------|--------|-----------|
 | 1 | Next.js App Router Migration | 1 | Complete | 2026-03-25 |
-| 2 | Database & Schema | TBD | Not started | - |
+| 2 | Database & Schema | 1 | Complete | 2026-03-25 |
 | 3 | Authentication | TBD | Not started | - |
 | 4 | Object Storage & Image Processing | TBD | Not started | - |
 | 5 | Admin Interface | TBD | Not started | - |
@@ -52,7 +52,7 @@ Phases: 1 of 7 complete
 - Reusable query functions in src/db/queries/
 
 **Plans:**
-- [ ] 02-01: Schema, migrations, env validation, and seed
+- [x] 02-01: Schema, migrations, env validation, and seed
 
 ### Phase 3: Authentication
 **Goal:** Single-admin auth protecting /(admin) routes
@@ -139,4 +139,4 @@ Phases: 1 of 7 complete
 
 ---
 *Roadmap created: 2026-03-25*
-*Last updated: 2026-03-25*
+*Last updated: 2026-03-25 — Phase 2 complete*
