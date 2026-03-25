@@ -11,7 +11,7 @@ The site owner (sole admin) can upload, process, tag, organize, and publish phot
 | Attribute | Value |
 |-----------|-------|
 | Version | 0.0.0 |
-| Status | Database schema defined, migration ready, seed script created |
+| Status | Auth complete, database schema defined, migration ready |
 | Last Updated | 2026-03-25 |
 
 ## Requirements
@@ -31,7 +31,7 @@ The site owner (sole admin) can upload, process, tag, organize, and publish phot
 - [x] Replace static JSON with Postgres (Neon) + Drizzle ORM — Phase 2 complete (schema, migration, seed, queries)
 - [ ] Replace local photo storage with Cloudflare R2 + CDN
 - [ ] Build admin interface for photo/project/category management
-- [ ] Implement single-admin auth (middleware + bcrypt + JWT)
+- [x] Implement single-admin auth (middleware + bcrypt + JWT) — Phase 3 complete
 - [ ] Async image processing pipeline (Sharp + background jobs)
 
 ### Out of Scope
@@ -75,4 +75,4 @@ The site owner (sole admin) can upload, process, tag, organize, and publish phot
 
 ---
 *Created: 2026-03-25*
-*Last updated: 2026-03-25 after Phase 2*
+*Last updated: 2026-03-25 after Phase 3*

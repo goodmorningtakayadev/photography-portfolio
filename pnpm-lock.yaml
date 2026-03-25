@@ -11,9 +11,15 @@ importers:
       '@neondatabase/serverless':
         specifier: ^1.0.2
         version: 1.0.2
+      bcryptjs:
+        specifier: ^3.0.3
+        version: 3.0.3
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.1(@neondatabase/serverless@1.0.2)(@types/pg@8.20.0)
+      jose:
+        specifier: ^6.2.2
+        version: 6.2.2
       next:
         specifier: ^15.3.2
         version: 15.5.14(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -30,6 +36,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.1.4
         version: 4.2.2
+      '@types/bcryptjs':
+        specifier: ^3.0.0
+        version: 3.0.0
       '@types/node':
         specifier: 25.5.0
         version: 25.5.0
@@ -848,6 +857,10 @@ packages:
   '@tailwindcss/postcss@4.2.2':
     resolution: {integrity: sha512-n4goKQbW8RVXIbNKRB/45LzyUqN451deQK0nzIeauVEqjlI49slUlgKYJM2QyUzap/PcpnS7kzSUmPb1sCRvYQ==}
 
+  '@types/bcryptjs@3.0.0':
+    resolution: {integrity: sha512-WRZOuCuaz8UcZZE4R5HXTco2goQSI2XxjGY3hbM/xDvwmqFWd4ivooImsMx65OKM6CtNKbnZ5YL+YwAwK7c1dg==}
+    deprecated: This is a stub types definition. bcryptjs provides its own type definitions, so you do not need this installed.
+
   '@types/node@22.19.15':
     resolution: {integrity: sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg==}
 
@@ -867,6 +880,10 @@ packages:
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
+
+  bcryptjs@3.0.3:
+    resolution: {integrity: sha512-GlF5wPWnSa/X5LKM1o0wz0suXIINz1iHRLvTS+sLyi7XPbe5ycmYI3DlZqVGZZtDgl4DmasFg7gOB3JYbphV5g==}
+    hasBin: true
 
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
@@ -1013,6 +1030,9 @@ packages:
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
+
+  jose@6.2.2:
+    resolution: {integrity: sha512-d7kPDd34KO/YnzaDOlikGpOurfF0ByC2sEV4cANCtdqLlTfBlw2p14O/5d/zv40gJPbIQxfES3nSx1/oYNyuZQ==}
 
   lightningcss-android-arm64@1.32.0:
     resolution: {integrity: sha512-YK7/ClTt4kAK0vo6w3X+Pnm0D2cf2vPHbhOXdoNti1Ga0al1P4TBZhwjATvjNwLEBCnKvjJc2jQgHXH0NEwlAg==}
@@ -1710,6 +1730,10 @@ snapshots:
       postcss: 8.5.8
       tailwindcss: 4.2.2
 
+  '@types/bcryptjs@3.0.0':
+    dependencies:
+      bcryptjs: 3.0.3
+
   '@types/node@22.19.15':
     dependencies:
       undici-types: 6.21.0
@@ -1735,6 +1759,8 @@ snapshots:
   '@types/ws@8.18.1':
     dependencies:
       '@types/node': 25.5.0
+
+  bcryptjs@3.0.3: {}
 
   buffer-from@1.1.2: {}
 
@@ -1856,6 +1882,8 @@ snapshots:
   graceful-fs@4.2.11: {}
 
   jiti@2.6.1: {}
+
+  jose@6.2.2: {}
 
   lightningcss-android-arm64@1.32.0:
     optional: true

@@ -7,8 +7,8 @@
     "status": "in_progress"
   },
   "phase": {
-    "number": 2,
-    "name": "Database & Schema",
+    "number": 3,
+    "name": "Authentication",
     "status": "complete"
   },
   "loop": {

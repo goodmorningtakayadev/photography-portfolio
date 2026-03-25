@@ -6,7 +6,7 @@ Refactor the existing Vite+React photography portfolio SPA into a Next.js App Ro
 ## Current Milestone
 **v1.0 Next.js + CMS Refactor** (v1.0.0)
 Status: In progress
-Phases: 2 of 7 complete
+Phases: 3 of 7 complete
 
 ## Phases
 
@@ -14,7 +14,7 @@ Phases: 2 of 7 complete
 |-------|------|-------|--------|-----------|
 | 1 | Next.js App Router Migration | 1 | Complete | 2026-03-25 |
 | 2 | Database & Schema | 1 | Complete | 2026-03-25 |
-| 3 | Authentication | TBD | Not started | - |
+| 3 | Authentication | 1 | Complete | 2026-03-25 |
 | 4 | Object Storage & Image Processing | TBD | Not started | - |
 | 5 | Admin Interface | TBD | Not started | - |
 | 6 | Public Pages Data Migration | TBD | Not started | - |
@@ -67,7 +67,7 @@ Phases: 2 of 7 complete
 - bcrypt password verification against ADMIN_PASSWORD_HASH env var
 
 **Plans:**
-- [ ] 03-01: Auth endpoints, middleware, and login page
+- [x] 03-01: Auth helpers, login/logout endpoints, middleware, and login page
 
 ### Phase 4: Object Storage & Image Processing
 **Goal:** Upload photos to Cloudflare R2 with async image processing pipeline
@@ -139,4 +139,4 @@ Phases: 2 of 7 complete
 
 ---
 *Roadmap created: 2026-03-25*
-*Last updated: 2026-03-25 — Phase 2 complete*
+*Last updated: 2026-03-25 — Phase 3 complete*
