@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
+import { cookies } from "next/headers";
 
 export const SESSION_COOKIE = "session";
 
@@ -27,4 +28,24 @@ export async function verifySession(
     new TextEncoder().encode(secret)
   );
   return payload;
+}
+
+/**
+ * Auth guard for API routes. Returns JWT payload if authenticated, null otherwise.
+ * Uses process.env directly (not env.ts) to maintain Edge compatibility
+ * and avoid coupling to R2 env vars.
+ */
+export async function getSession(): Promise<JWTPayload | null> {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) return null;
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+
+  try {
+    return await verifySession(token, jwtSecret);
+  } catch {
+    return null;
+  }
 }
