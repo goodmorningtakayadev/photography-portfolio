@@ -6,7 +6,7 @@ Refactor the existing Vite+React photography portfolio SPA into a Next.js App Ro
 ## Current Milestone
 **v1.0 Next.js + CMS Refactor** (v1.0.0)
 Status: In progress
-Phases: 3 of 7 complete
+Phases: 5 of 7 complete
 
 ## Phases
 
@@ -15,8 +15,8 @@ Phases: 3 of 7 complete
 | 1 | Next.js App Router Migration | 1 | Complete | 2026-03-25 |
 | 2 | Database & Schema | 1 | Complete | 2026-03-25 |
 | 3 | Authentication | 1 | Complete | 2026-03-25 |
-| 4 | Object Storage & Image Processing | TBD | Not started | - |
-| 5 | Admin Interface | TBD | Not started | - |
+| 4 | Object Storage & Image Processing | 2 | Complete | 2026-03-25 |
+| 5 | Admin Interface | 3 | Complete | 2026-03-25 |
 | 6 | Public Pages Data Migration | TBD | Not started | - |
 | 7 | Polish & Deploy | TBD | Not started | - |
 
@@ -84,8 +84,8 @@ Phases: 3 of 7 complete
 - Photo status lifecycle (processing → ready → failed)
 
 **Plans:**
-- [ ] 04-01: R2 client and presigned upload flow
-- [ ] 04-02: Image processing pipeline (Sharp + variants + EXIF + blurhash)
+- [x] 04-01: R2 client and presigned upload flow
+- [x] 04-02: Image processing pipeline (Sharp + variants + EXIF + blurhash)
 
 ### Phase 5: Admin Interface
 **Goal:** Admin CMS for managing photos, categories, and projects
@@ -101,9 +101,9 @@ Phases: 3 of 7 complete
 - Bulk operations (archive, categorize)
 
 **Plans:**
-- [ ] 05-01: Admin layout, dashboard, and photo management
-- [ ] 05-02: Upload interface and category management
-- [ ] 05-03: Project management and bulk operations
+- [x] 05-01: Admin layout, dashboard, and photo management
+- [x] 05-02: Upload interface and category management
+- [x] 05-03: Project management and bulk operations
 
 ### Phase 6: Public Pages Data Migration
 **Goal:** Switch public pages from static JSON to database-driven with ISR
@@ -139,4 +139,4 @@ Phases: 3 of 7 complete
 
 ---
 *Roadmap created: 2026-03-25*
-*Last updated: 2026-03-25 — Phase 3 complete*
+*Last updated: 2026-03-25 — Phase 5 complete*

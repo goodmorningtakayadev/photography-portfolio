@@ -11,7 +11,7 @@ The site owner (sole admin) can upload, process, tag, organize, and publish phot
 | Attribute | Value |
 |-----------|-------|
 | Version | 0.0.0 |
-| Status | Auth complete, database schema defined, migration ready |
+| Status | Admin interface complete, public pages data migration next |
 | Last Updated | 2026-03-25 |
 
 ## Requirements
@@ -29,10 +29,10 @@ The site owner (sole admin) can upload, process, tag, organize, and publish phot
 ### Active (In Progress)
 - [x] Migrate from Vite+React to Next.js App Router — Phase 1 complete
 - [x] Replace static JSON with Postgres (Neon) + Drizzle ORM — Phase 2 complete (schema, migration, seed, queries)
-- [ ] Replace local photo storage with Cloudflare R2 + CDN
-- [ ] Build admin interface for photo/project/category management
+- [x] Replace local photo storage with Cloudflare R2 + CDN — Phase 4 complete (R2 client, presigned uploads, variants)
+- [x] Build admin interface for photo/project/category management — Phase 5 complete (dashboard, photos, upload, categories, projects, bulk ops)
 - [x] Implement single-admin auth (middleware + bcrypt + JWT) — Phase 3 complete
-- [ ] Async image processing pipeline (Sharp + background jobs)
+- [x] Async image processing pipeline (Sharp + background jobs) — Phase 4 complete (3 WebP variants, EXIF, blurhash)
 
 ### Out of Scope
 - Multi-user support, user registration, collaborative editing
@@ -75,4 +75,4 @@ The site owner (sole admin) can upload, process, tag, organize, and publish phot
 
 ---
 *Created: 2026-03-25*
-*Last updated: 2026-03-25 after Phase 3*
+*Last updated: 2026-03-25 after Phase 5*
