@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import EditorialSpread from '../components/EditorialSpread';
-import Lightbox from '../components/Lightbox';
 import { useRevealAll } from '../hooks/useReveal';
 import { useViewCursor } from '../hooks/useViewCursor';
 import { getImageUrl, getFallbackUrl } from '../utils/imageHelpers';
-import photoData from '../data/photos.json';
 import './Home.css';
 
 const HERO_LINES = [
@@ -16,12 +15,10 @@ const HERO_LINES = [
   { text: 'Romantacise', style: 'em' },
 ];
 
-const Home = () => {
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
+const Home = ({ photos, categories, featuredProjects }) => {
+  const router = useRouter();
   const [heroReady, setHeroReady] = useState(false);
-  const publishedPhotos = photoData.photos.filter(p => p.published !== false);
-  const featuredPhotos = publishedPhotos.filter(p => p.featured);
-  const heroPhoto = publishedPhotos.find(p => p.heroImage) || featuredPhotos[0];
+  const heroPhoto = photos[0];
   const heroRef = useRef(null);
   const [typed, setTyped] = useState(0);
   const [glitch, setGlitch] = useState(false);
@@ -156,7 +153,7 @@ const Home = () => {
         <div className="hero-watermark">GOODMORNING<br />TAKAYA</div>
       </section>
 
-      {/* ══ FEATURED ══ */}
+      {/* ══ FEATURED PROJECTS ══ */}
       <section className="feat-section">
         <div className="section-head reveal">
           <div className="section-head-left">
@@ -164,9 +161,25 @@ const Home = () => {
             <h2 className="section-title">Featured</h2>
           </div>
           <span className="section-rule" />
-          <span className="section-meta mono">{Math.min(featuredPhotos.length, 3)} PIECES</span>
+          <span className="section-meta mono">{featuredProjects.length} {featuredProjects.length === 1 ? 'PROJECT' : 'PROJECTS'}</span>
         </div>
-        <EditorialSpread photos={featuredPhotos.slice(0, 3)} onPhotoClick={(p) => setSelectedPhoto(p)} />
+        {featuredProjects.length > 0 ? (
+          <EditorialSpread
+            photos={featuredProjects.map(p => ({
+              ...(p.coverPhoto || {}),
+              id: p.id,
+              title: p.title,
+              category: '',
+              categoryName: 'Project',
+              _slug: p.slug,
+            }))}
+            onPhotoClick={(photo) => router.push(`/projects/${photo._slug}`)}
+          />
+        ) : (
+          <div className="feat-empty reveal">
+            <p className="feat-empty-text mono">No projects published yet.</p>
+          </div>
+        )}
       </section>
 
       {/* ══ CATEGORIES ══ */}
@@ -178,9 +191,8 @@ const Home = () => {
 
         <div className="view-cursor" ref={catCursorRef}><span>VIEW</span></div>
         <div className="cat-grid" ref={catRef}>
-          {photoData.categories.map((cat, i) => {
-            const photo = publishedPhotos.find(p => p.id === cat.coverPhoto)
-              || publishedPhotos.find(p => p.category === cat.id);
+          {categories.map((cat, i) => {
+            const photo = cat.coverPhoto;
             return (
               <Link
                 key={cat.id}
@@ -228,14 +240,6 @@ const Home = () => {
         </div>
       </section>
 
-      {selectedPhoto && (
-        <Lightbox
-          phohref={selectedPhoto}
-          photos={featuredPhotos}
-          onClose={() => setSelectedPhoto(null)}
-          onNavigate={(p) => setSelectedPhoto(p)}
-        />
-      )}
     </div>
   );
 };

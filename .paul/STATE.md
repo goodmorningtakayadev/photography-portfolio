@@ -10,21 +10,21 @@ See: .paul/PROJECT.md (updated 2026-03-25)
 ## Current Position
 
 Milestone: v1.0 Next.js + CMS Refactor
-Phase: 6 of 7 (Public Pages Data Migration) — Not started
-Plan: Not started
-Status: Ready to plan Phase 6
-Last activity: 2026-03-25 — Phase 5 complete, transitioned to Phase 6
+Phase: 6 of 7 (Public Pages Data Migration) — Planning
+Plan: 06-02 APPLY in progress (Tasks 1+2 done, Task 3 checkpoint active)
+Status: APPLY in progress — awaiting checkpoint approval
+Last activity: 2026-03-26 — Executing 06-02, user testing checkpoint
 
 Progress:
-- Milestone: [████████░░] 85%
-- Phase 6: [░░░░░░░░░░] 0%
+- Milestone: [█████████░] 90%
+- Phase 6: [█████░░░░░] 50%
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ✓        ✓     [Loop complete — ready for next PLAN]
+  ✓        ◐        ○     [APPLY in progress — Tasks 1+2 done, Task 3 checkpoint active]
 ```
 
 ## Performance Metrics
@@ -78,6 +78,8 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | db.batch() for atomic reorder + bulk categorize (neon-http lacks db.transaction()) | Phase 5 | Pattern established for all multi-statement atomicity on neon-http |
 | Native HTML drag events for reorder (no external library) | Phase 5 | Lightweight pattern, consistent with UploadDropzone |
 | Bulk categorize uses REPLACE semantics (delete all + insert new) | Phase 5 | UI labels "Replaces existing categories" — clear mental model |
+| Enterprise audit on 06-01-PLAN.md. Applied 4 must-have, 3 strongly-recommended upgrades. Deferred 3. Verdict: Conditionally Acceptable | Phase 6 | Plan strengthened — caught CategoryView ID/slug mismatch, missing description field, photo.category dual-use, collection click-through data gap |
+| Enterprise audit on 06-02-PLAN.md. Applied 2 must-have, 4 strongly-recommended upgrades. Deferred 3. Verdict: Conditionally Acceptable | Phase 6 | Plan strengthened — caught revalidateTag no-op with Drizzle (switched to revalidatePath), getProjectBySlug missing variants, mobile scroll-snap mandatory → proximity |
 
 ### Deferred Issues
 | next/font for Google Fonts | Phase 1 Audit | S | Phase 7 |
@@ -92,10 +94,14 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-25
-Stopped at: Phase 5 complete, ready to plan Phase 6
-Next action: /paul:plan for Phase 6 (Public Pages Data Migration)
-Resume file: .paul/ROADMAP.md
+Last session: 2026-03-26
+Stopped at: Plan 06-02 APPLY — Task 3 checkpoint (user testing project pages + revalidation)
+Next action: Resume checkpoint verification, then /paul:unify after approval
+Resume file: .paul/HANDOFF-2026-03-26.md
+Resume context:
+- Tasks 1+2 complete (project pages built, revalidatePath wired)
+- Task 3 checkpoint active — user was making design tweaks (typing animation, featured projects)
+- All code implemented but uncommitted
 
 ---
 *STATE.md — Updated after every significant action*

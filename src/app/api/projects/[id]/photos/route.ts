@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
@@ -118,6 +119,8 @@ export async function POST(request: Request, { params }: RouteContext) {
       })),
     );
 
+    revalidatePath("/projects/" + project.slug);
+
     return NextResponse.json({
       data: { added: newPhotos.length },
       error: null,
@@ -201,6 +204,8 @@ export async function PUT(request: Request, { params }: RouteContext) {
       ),
     ]);
 
+    revalidatePath("/projects/" + project.slug);
+
     return NextResponse.json({
       data: { reordered: photoIds.length },
       error: null,
@@ -275,6 +280,17 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         .update(projects)
         .set({ coverPhotoId: null, updatedAt: new Date() })
         .where(eq(projects.id, id));
+    }
+
+    // Fetch project slug for revalidation
+    const [projectForSlug] = await db
+      .select({ slug: projects.slug })
+      .from(projects)
+      .where(eq(projects.id, id))
+      .limit(1);
+
+    if (projectForSlug) {
+      revalidatePath("/projects/" + projectForSlug.slug);
     }
 
     return NextResponse.json({

@@ -41,7 +41,7 @@ const EditorialSpread = ({ photos, onPhotoClick }) => {
           <div className="ed-card-content">
             <div className="ed-card-text">
               <h3 className="ed-card-title">{photo.title}</h3>
-              <span className="ed-card-cat mono">{photo.category}</span>
+              <span className="ed-card-cat mono">{photo.categoryName || photo.category}</span>
             </div>
             <span className="ed-card-line" />
           </div>

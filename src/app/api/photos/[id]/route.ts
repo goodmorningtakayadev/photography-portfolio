@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { eq, gte, ne, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
@@ -111,6 +112,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         .set({ coverPhotoId: null, updatedAt: new Date() })
         .where(eq(projects.coverPhotoId, id));
 
+      revalidatePath("/");
+      revalidatePath("/gallery");
+
       return NextResponse.json({
         data: { id, status: "archived" },
         error: null,
@@ -128,6 +132,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         .update(photos)
         .set({ status: "ready", updatedAt: new Date() })
         .where(eq(photos.id, id));
+
+      revalidatePath("/");
+      revalidatePath("/gallery");
 
       return NextResponse.json({
         data: { id, status: "ready" },
@@ -234,6 +241,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       }
     }
 
+    revalidatePath("/");
+    revalidatePath("/gallery");
+
     return NextResponse.json({ data: { id, updated: true }, error: null });
   } catch (error) {
     console.error("PATCH /api/photos/[id] error:", error);
@@ -332,7 +342,9 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     // 3. Delete DB row (ON DELETE CASCADE handles join tables + variants)
     await db.delete(photos).where(eq(photos.id, id));
 
-    // Note: revalidateTag calls deferred to Phase 6
+    revalidatePath("/");
+    revalidatePath("/gallery");
+    revalidatePath("/projects");
 
     return NextResponse.json({
       data: {

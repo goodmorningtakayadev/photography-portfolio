@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
@@ -194,6 +195,12 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       .where(eq(projects.id, id))
       .returning();
 
+    revalidatePath("/projects");
+    revalidatePath("/projects/" + updated.slug);
+    if (existing.slug !== updated.slug) {
+      revalidatePath("/projects/" + existing.slug);
+    }
+
     return NextResponse.json({ data: updated, error: null });
   } catch (error: unknown) {
     if (error instanceof Error && error.message.includes("unique")) {
@@ -262,6 +269,10 @@ export async function DELETE(request: Request, { params }: RouteContext) {
 
   try {
     await db.delete(projects).where(eq(projects.id, id));
+
+    revalidatePath("/projects");
+    revalidatePath("/projects/" + existing.slug);
+
     return NextResponse.json({ data: { deleted: true }, error: null });
   } catch (error) {
     console.error("DELETE /api/projects/[id] error:", error);

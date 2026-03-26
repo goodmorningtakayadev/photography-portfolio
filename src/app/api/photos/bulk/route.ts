@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
@@ -70,6 +71,9 @@ export async function POST(request: Request) {
           .where(inArray(projects.coverPhotoId, photoIds)),
       ]);
 
+      revalidatePath("/");
+      revalidatePath("/gallery");
+
       return NextResponse.json({
         data: { updated: photoIds.length },
         error: null,
@@ -83,6 +87,9 @@ export async function POST(request: Request) {
         .update(photos)
         .set({ status: "ready", updatedAt: new Date() })
         .where(inArray(photos.id, photoIds));
+
+      revalidatePath("/");
+      revalidatePath("/gallery");
 
       return NextResponse.json({
         data: { updated: photoIds.length },
@@ -121,6 +128,8 @@ export async function POST(request: Request) {
           ],
         );
       }
+
+      revalidatePath("/gallery");
 
       return NextResponse.json({
         data: { updated: photoIds.length },

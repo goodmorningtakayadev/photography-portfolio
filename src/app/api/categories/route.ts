@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 import { getSession } from "@/lib/session";
@@ -114,6 +115,9 @@ export async function POST(request: Request) {
       .insert(categories)
       .values({ name, slug, sortOrder: nextOrder })
       .returning();
+
+    revalidatePath("/");
+    revalidatePath("/gallery");
 
     return NextResponse.json({ data: created, error: null }, { status: 201 });
   } catch (error: unknown) {

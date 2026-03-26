@@ -17,7 +17,7 @@ Phases: 5 of 7 complete
 | 3 | Authentication | 1 | Complete | 2026-03-25 |
 | 4 | Object Storage & Image Processing | 2 | Complete | 2026-03-25 |
 | 5 | Admin Interface | 3 | Complete | 2026-03-25 |
-| 6 | Public Pages Data Migration | TBD | Not started | - |
+| 6 | Public Pages Data Migration | 2 | Planning | - |
 | 7 | Polish & Deploy | TBD | Not started | - |
 
 ## Phase Details

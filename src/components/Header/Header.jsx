@@ -7,6 +7,7 @@ import './Header.css';
 
 const NAV_LINKS = [
   { to: '/', label: 'Home' },
+  { to: '/projects', label: 'Projects' },
   { to: '/gallery', label: 'Gallery' },
   { to: '/about', label: 'About' },
 ];

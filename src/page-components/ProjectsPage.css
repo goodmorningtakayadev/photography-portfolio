@@ -1,0 +1,218 @@
+/* ══ PROJECTS LISTING ══ */
+
+.proj-listing {
+  min-height: 100vh;
+  background: var(--black);
+  color: var(--white);
+}
+
+.proj-listing-header {
+  padding: clamp(6rem, 12vw, 10rem) var(--s-page) 0;
+  max-width: var(--max-w);
+  margin: 0 auto;
+}
+
+.proj-listing-header-inner {
+  margin-bottom: 2rem;
+}
+
+.proj-listing-tag {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ember);
+  margin-bottom: 1.2rem;
+}
+
+.proj-listing-title {
+  font-family: var(--f-display);
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  line-height: 0.9;
+  color: var(--white);
+}
+
+.proj-listing-line {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: clamp(3rem, 6vw, 5rem);
+}
+
+.proj-listing-empty {
+  padding: 6rem var(--s-page);
+  text-align: center;
+}
+
+.proj-listing-empty-msg {
+  font-family: var(--f-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--white-ghost);
+}
+
+.proj-listing-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  padding: 0 var(--s-page) clamp(4rem, 8vw, 8rem);
+  max-width: var(--max-w);
+  margin: 0 auto;
+  cursor: none;
+}
+
+/* ── Card ── */
+
+.proj-card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--black-surface);
+  cursor: none;
+  transition: border-color var(--t-base) var(--ease-out);
+}
+
+.proj-card:hover {
+  border-color: var(--border-strong);
+}
+
+.proj-card:hover .proj-card-img img {
+  transform: scale(1.04);
+}
+
+.proj-card:hover .proj-card-border {
+  opacity: 1;
+}
+
+.proj-card:hover .proj-card-line {
+  width: 40px;
+}
+
+.proj-card-img {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  position: relative;
+}
+
+.proj-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--t-slow) var(--ease-out);
+}
+
+.proj-card-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--black-warm);
+}
+
+.proj-card-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2rem 1.25rem 1.25rem;
+  background: linear-gradient(to top, rgba(11, 11, 11, 0.92) 0%, rgba(11, 11, 11, 0.6) 60%, transparent 100%);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--t-base) var(--ease-out), transform var(--t-base) var(--ease-out);
+}
+
+.proj-card:hover .proj-card-overlay {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.proj-card-name {
+  font-family: var(--f-display);
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--white);
+  overflow: hidden;
+  white-space: nowrap;
+  width: 0;
+  transition: none;
+}
+
+.proj-card:hover .proj-card-name {
+  animation: typeReveal 1.5s steps(16, end) 0.1s forwards;
+}
+
+.proj-card-desc {
+  font-family: var(--f-body);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--white-ghost);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity var(--t-base) var(--ease-out);
+  transition-delay: 1.2s;
+}
+
+.proj-card:hover .proj-card-desc {
+  opacity: 1;
+}
+
+@keyframes typeReveal {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes cursorBlink {
+  0%, 100% { border-right-color: var(--ember); }
+  50% { border-right-color: transparent; }
+}
+
+.proj-card-line {
+  position: absolute;
+  bottom: 1rem;
+  left: 1.25rem;
+  width: 0;
+  height: 1px;
+  background: var(--ember);
+  transition: width var(--t-base) var(--ease-out);
+}
+
+.proj-card-border {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--ember);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-fast) var(--ease-out);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .proj-listing-grid {
+    cursor: auto;
+  }
+
+  .proj-card {
+    cursor: pointer;
+  }
+}
+
+@media (min-width: 768px) {
+  .proj-listing-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .proj-listing-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

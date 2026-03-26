@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { getSession } from "@/lib/session";
@@ -134,6 +135,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       .where(eq(categories.id, id))
       .returning();
 
+    revalidatePath("/");
+    revalidatePath("/gallery");
+
     return NextResponse.json({ data: updated, error: null });
   } catch (error: unknown) {
     if (error instanceof Error && error.message.includes("unique")) {
@@ -183,6 +187,10 @@ export async function DELETE(request: Request, { params }: RouteContext) {
 
   try {
     await db.delete(categories).where(eq(categories.id, id));
+
+    revalidatePath("/");
+    revalidatePath("/gallery");
+
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("DELETE /api/categories/[id] error:", error);

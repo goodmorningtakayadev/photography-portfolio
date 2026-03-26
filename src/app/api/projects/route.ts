@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 import { getSession } from "@/lib/session";
@@ -113,6 +114,8 @@ export async function POST(request: Request) {
         sortOrder: nextOrder,
       })
       .returning();
+
+    revalidatePath("/projects");
 
     return NextResponse.json({ data: created, error: null }, { status: 201 });
   } catch (error: unknown) {

@@ -37,7 +37,7 @@ const Gallery = ({ photos, onPhotoClick }) => {
               />
             </div>
             <div className="g-info">
-              <span className="g-cat mono">{photo.category}</span>
+              <span className="g-cat mono">{photo.categoryName || photo.category}</span>
               <h3 className="g-title">{photo.title}</h3>
             </div>
             <div className="g-border-flash" />
