@@ -2,37 +2,37 @@
 
 ## Project Reference
 
-See: .paul/PROJECT.md (updated 2026-03-25)
+See: .paul/PROJECT.md (updated 2026-03-26)
 
 **Core value:** Site owner can upload, process, tag, organize, and publish photos through an admin interface, while visitors see a performant, statically-generated public portfolio.
-**Current focus:** Phase 6 — Public Pages Data Migration
+**Current focus:** Phase 7 — Polish & Deploy
 
 ## Current Position
 
 Milestone: v1.0 Next.js + CMS Refactor
-Phase: 6 of 7 (Public Pages Data Migration) — Planning
-Plan: 06-02 APPLY in progress (Tasks 1+2 done, Task 3 checkpoint active)
-Status: APPLY in progress — awaiting checkpoint approval
-Last activity: 2026-03-26 — Executing 06-02, user testing checkpoint
+Phase: 7 of 7 (Polish & Deploy) — Not started
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-03-26 — Phase 6 complete, transitioned to Phase 7
 
 Progress:
-- Milestone: [█████████░] 90%
-- Phase 6: [█████░░░░░] 50%
+- Milestone: [█████████░] 95%
+- Phase 7: [░░░░░░░░░░] 0%
 
 ## Loop Position
 
 Current loop state:
 ```
 PLAN ──▶ APPLY ──▶ UNIFY
-  ✓        ◐        ○     [APPLY in progress — Tasks 1+2 done, Task 3 checkpoint active]
+  ○        ○        ○     [Idle — ready for next PLAN]
 ```
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: ~23 min
-- Total execution time: ~185 min
+- Total plans completed: 10
+- Average duration: ~24 min
+- Total execution time: ~245 min
 
 **By Phase:**
 
@@ -43,6 +43,7 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | 03-authentication | 1/1 | ~25 min | ~25 min |
 | 04-object-storage | 2/2 | ~35 min | ~18 min |
 | 05-admin-interface | 3/3 | ~90 min | ~30 min |
+| 06-public-pages-data-migration | 2/2 | ~60 min | ~30 min |
 
 ## Accumulated Context
 
@@ -80,14 +81,21 @@ PLAN ──▶ APPLY ──▶ UNIFY
 | Bulk categorize uses REPLACE semantics (delete all + insert new) | Phase 5 | UI labels "Replaces existing categories" — clear mental model |
 | Enterprise audit on 06-01-PLAN.md. Applied 4 must-have, 3 strongly-recommended upgrades. Deferred 3. Verdict: Conditionally Acceptable | Phase 6 | Plan strengthened — caught CategoryView ID/slug mismatch, missing description field, photo.category dual-use, collection click-through data gap |
 | Enterprise audit on 06-02-PLAN.md. Applied 2 must-have, 4 strongly-recommended upgrades. Deferred 3. Verdict: Conditionally Acceptable | Phase 6 | Plan strengthened — caught revalidateTag no-op with Drizzle (switched to revalidatePath), getProjectBySlug missing variants, mobile scroll-snap mandatory → proximity |
+| revalidatePath instead of revalidateTag for ISR | Phase 6 | Drizzle bypasses Next.js fetch cache — revalidateTag is a no-op |
+| Editorial magazine layout for project detail pages | Phase 6 | Scroll-snapping spreads — immersive viewing UX distinct from gallery |
+| Homepage featured section shows projects not photos | Phase 6 | User-directed — drives traffic to project pages |
+| CSS files over styled-jsx | Phase 6 | styled-jsx scoping broke styles at runtime |
 
 ### Deferred Issues
 | next/font for Google Fonts | Phase 1 Audit | S | Phase 7 |
-| Per-route metadata | Phase 1 Audit | S | Phase 6 |
+| Per-route metadata | Phase 1 Audit | S | Phase 7 |
 | Next.js ESLint plugin | Phase 1 Audit | S | Phase 7 |
 | ~~Env validation eager loading risk~~ | ~~Phase 2 Audit~~ | ~~S~~ | ~~Phase 6~~ → **Resolved Phase 4** |
 | Env health check endpoint (lazy Proxy shifts fail-fast to fail-on-use) | Phase 4 | S | Phase 7 |
 | ~~Processing retry mechanism for failed photos~~ | ~~Phase 4~~ | ~~S~~ | ~~Phase 5~~ → **Resolved Phase 5 (05-01)** |
+| About page photo from CDN + admin-configurable | Phase 6 | S | Phase 7 |
+| Featured projects user-selectable from admin | Phase 6 | S | Future |
+| unstable_cache for granular tag-based invalidation | Phase 6 | S | Future |
 
 ### Blockers/Concerns
 None.
@@ -95,13 +103,13 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-26
-Stopped at: Plan 06-02 APPLY — Task 3 checkpoint (user testing project pages + revalidation)
-Next action: Resume checkpoint verification, then /paul:unify after approval
-Resume file: .paul/HANDOFF-2026-03-26.md
+Stopped at: Phase 6 complete, transitioned to Phase 7
+Next action: /paul:plan for Phase 7 (Polish & Deploy)
+Resume file: .paul/ROADMAP.md
 Resume context:
-- Tasks 1+2 complete (project pages built, revalidatePath wired)
-- Task 3 checkpoint active — user was making design tweaks (typing animation, featured projects)
-- All code implemented but uncommitted
+- All 6 phases complete, 10 plans executed
+- Public site fully database-driven with ISR revalidation
+- Ready for final polish and Vercel deployment
 
 ---
 *STATE.md — Updated after every significant action*

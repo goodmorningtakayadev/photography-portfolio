@@ -11,8 +11,8 @@ The site owner (sole admin) can upload, process, tag, organize, and publish phot
 | Attribute | Value |
 |-----------|-------|
 | Version | 0.0.0 |
-| Status | Admin interface complete, public pages data migration next |
-| Last Updated | 2026-03-25 |
+| Status | All public pages database-driven with ISR, ready for polish & deploy |
+| Last Updated | 2026-03-26 |
 
 ## Requirements
 
@@ -27,12 +27,18 @@ The site owner (sole admin) can upload, process, tag, organize, and publish phot
 - [x] Route-based code splitting
 
 ### Active (In Progress)
-- [x] Migrate from Vite+React to Next.js App Router — Phase 1 complete
-- [x] Replace static JSON with Postgres (Neon) + Drizzle ORM — Phase 2 complete (schema, migration, seed, queries)
-- [x] Replace local photo storage with Cloudflare R2 + CDN — Phase 4 complete (R2 client, presigned uploads, variants)
-- [x] Build admin interface for photo/project/category management — Phase 5 complete (dashboard, photos, upload, categories, projects, bulk ops)
-- [x] Implement single-admin auth (middleware + bcrypt + JWT) — Phase 3 complete
-- [x] Async image processing pipeline (Sharp + background jobs) — Phase 4 complete (3 WebP variants, EXIF, blurhash)
+- [ ] Production polish and Vercel deployment — Phase 7
+
+### Validated (Recently Shipped)
+- [x] Migrate from Vite+React to Next.js App Router — Phase 1
+- [x] Replace static JSON with Postgres (Neon) + Drizzle ORM — Phase 2 (schema, migration, seed, queries)
+- [x] Replace local photo storage with Cloudflare R2 + CDN — Phase 4 (R2 client, presigned uploads, variants)
+- [x] Build admin interface for photo/project/category management — Phase 5 (dashboard, photos, upload, categories, projects, bulk ops)
+- [x] Implement single-admin auth (middleware + bcrypt + JWT) — Phase 3
+- [x] Async image processing pipeline (Sharp + background jobs) — Phase 4 (3 WebP variants, EXIF, blurhash)
+- [x] Public pages database-driven with ISR — Phase 6 (homepage, gallery, projects listing, project detail editorial)
+- [x] ISR revalidation from all admin mutations — Phase 6 (revalidatePath in 7 API route files)
+- [x] Projects editorial magazine experience — Phase 6 (scroll-snapping spreads, progress indicator, typing animation hover)
 
 ### Out of Scope
 - Multi-user support, user registration, collaborative editing
@@ -75,4 +81,4 @@ The site owner (sole admin) can upload, process, tag, organize, and publish phot
 
 ---
 *Created: 2026-03-25*
-*Last updated: 2026-03-25 after Phase 5*
+*Last updated: 2026-03-26 after Phase 6*

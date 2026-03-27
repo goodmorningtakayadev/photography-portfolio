@@ -6,7 +6,7 @@ Refactor the existing Vite+React photography portfolio SPA into a Next.js App Ro
 ## Current Milestone
 **v1.0 Next.js + CMS Refactor** (v1.0.0)
 Status: In progress
-Phases: 5 of 7 complete
+Phases: 6 of 7 complete
 
 ## Phases
 
@@ -17,7 +17,7 @@ Phases: 5 of 7 complete
 | 3 | Authentication | 1 | Complete | 2026-03-25 |
 | 4 | Object Storage & Image Processing | 2 | Complete | 2026-03-25 |
 | 5 | Admin Interface | 3 | Complete | 2026-03-25 |
-| 6 | Public Pages Data Migration | 2 | Planning | - |
+| 6 | Public Pages Data Migration | 2 | Complete | 2026-03-26 |
 | 7 | Polish & Deploy | TBD | Not started | - |
 
 ## Phase Details
@@ -119,8 +119,8 @@ Phases: 5 of 7 complete
 - Admin mutations trigger revalidation
 
 **Plans:**
-- [ ] 06-01: Gallery and homepage data migration
-- [ ] 06-02: Projects pages and revalidation
+- [x] 06-01: Gallery and homepage data migration
+- [x] 06-02: Projects pages and revalidation
 
 ### Phase 7: Polish & Deploy
 **Goal:** Production-ready site deployed to Vercel
@@ -139,4 +139,4 @@ Phases: 5 of 7 complete
 
 ---
 *Roadmap created: 2026-03-25*
-*Last updated: 2026-03-25 — Phase 5 complete*
+*Last updated: 2026-03-26 — Phase 6 complete*
