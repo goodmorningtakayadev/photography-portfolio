@@ -1,157 +1,105 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import EditorialSpread from '../components/EditorialSpread';
-import { useRevealAll } from '../hooks/useReveal';
-import { useViewCursor } from '../hooks/useViewCursor';
-import { getImageUrl, getFallbackUrl } from '../utils/imageHelpers';
-import './Home.css';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import EditorialSpread from "../components/EditorialSpread";
+import { useRevealAll } from "../hooks/useReveal";
+import { useViewCursor } from "../hooks/useViewCursor";
+import { getImageUrl, getFallbackUrl } from "../utils/imageHelpers";
+import "./Home.css";
 
-const HERO_LINES = [
-  { text: 'Remain', style: 'normal' },
-  { text: 'And', style: 'stroke' },
-  { text: 'Romantacise', style: 'em' },
+const HEADLINE = ["GOOD", "MORNING", "TAKAYA"];
+
+/* Statement: lead clause in ink, everything after the em-dash in accent. */
+const STATEMENT_LEAD = "Just dude that likes taking pictures — ";
+const STATEMENT_ACCENT =
+  "people, places, accidents and everything in between. Big booty latina clapping machine.";
+
+const TICKER = [
+  "GOOD MORNING TAKAYA",
+  "PORTRAIT · LANDSCAPE · STREET · ARCHITECTURE · TRAVEL",
+  "AVAILABLE FOR COLLABS — AUTUMN 2026",
+  "U.S. / SHOOTING EVERYWHERE",
+  "2015—2026",
 ];
 
-const Home = ({ photos, categories, featuredProjects }) => {
-  const router = useRouter();
-  const [heroReady, setHeroReady] = useState(false);
-  const heroPhoto = photos[0];
-  const heroRef = useRef(null);
-  const [typed, setTyped] = useState(0);
-  const [glitch, setGlitch] = useState(false);
-  const glitchTimer = useRef(null);
-
-  const allChars = HERO_LINES.flatMap((line, li) =>
-    [...line.text].map((ch, ci) => ({ ch, style: line.style, line: li, idx: ci }))
+/* Infinite marquee — two identical rows scroll -100% for a seamless loop.
+   Each row repeats the phrases so it always overflows the viewport (even
+   ultra-wide), otherwise a gap would appear before the loop point. */
+function Ticker({ items }) {
+  const repeated = [...items, ...items, ...items];
+  const row = (key) => (
+    <div className="ticker__row" key={key} aria-hidden={key === "b"}>
+      {repeated.map((s, i) => (
+        <span key={i}>{s}</span>
+      ))}
+    </div>
   );
-  const totalChars = allChars.length;
+  return (
+    <div className="ticker">
+      {row("a")}
+      {row("b")}
+    </div>
+  );
+}
+
+const Home = ({ photos, categories, featuredProjects, hero }) => {
+  const router = useRouter();
+  const heroPhoto = hero?.photo ?? photos[0];
+  const heroFocalX = hero?.focalX ?? 50;
+  const heroFocalY = hero?.focalY ?? 50;
 
   useRevealAll();
   const { containerRef: catRef, cursorRef: catCursorRef } = useViewCursor();
 
-  useEffect(() => {
-    const t = setTimeout(() => setHeroReady(true), 200);
-    return () => clearTimeout(t);
-  }, []);
-
-  /* Typing effect — starts after hero reveals */
-  useEffect(() => {
-    if (!heroReady) return;
-    if (typed < totalChars) {
-      const char = allChars[typed];
-      const isLineStart = char.idx === 0 && char.line > 0;
-      const delay = isLineStart ? 300 : 55 + Math.random() * 50;
-      const id = setTimeout(() => setTyped(t => t + 1), delay);
-      return () => clearTimeout(id);
-    }
-  }, [heroReady, typed]);
-
-  /* Periodic glitch bursts — only after typing is done */
-  useEffect(() => {
-    if (typed < totalChars) return;
-    const trigger = () => {
-      setGlitch(true);
-      setTimeout(() => setGlitch(false), 1500);
-      glitchTimer.current = setTimeout(trigger, 3000 + Math.random() * 5000);
-    };
-    glitchTimer.current = setTimeout(trigger, 1500);
-    return () => clearTimeout(glitchTimer.current);
-  }, [typed >= totalChars]);
-
-  // Parallax
-  useEffect(() => {
-    const onScroll = () => {
-      if (!heroRef.current) return;
-      const y = window.scrollY;
-      const img = heroRef.current.querySelector('.hero-bg-img');
-      if (img) img.style.transform = `scale(1.15) translateY(${y * 0.12}px)`;
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
   return (
     <div className="home">
       {/* ══ HERO ══ */}
-      <section className="hero" ref={heroRef}>
-        <div className="hero-bg">
-          <img
-            className="hero-bg-img"
-            src={getImageUrl(heroPhoto, 'full')}
-            alt=""
-            aria-hidden="true"
-            onError={(e) => { e.target.src = getFallbackUrl(heroPhoto); }}
-          />
-          <div className="hero-vignette" />
+      <section className="hero">
+        <div className="hero__aurora" aria-hidden="true" />
+        <div className="hero__photo" aria-hidden="true">
+          {heroPhoto && (
+            <img
+              src={getImageUrl(heroPhoto, "full")}
+              alt=""
+              style={{ objectPosition: `${heroFocalX}% ${heroFocalY}%` }}
+              onError={(e) => {
+                e.target.src = getFallbackUrl(heroPhoto);
+              }}
+            />
+          )}
         </div>
+        <div className="hero__glass" aria-hidden="true" />
+        <div className="hero__vignette" aria-hidden="true" />
 
-        {/* Letterbox */}
-        <div className="hero-letterbox hero-letterbox--bot" />
-
-        {/* Neon accent line across top */}
-        <div className="hero-neon-line" />
-
-        <div className={`hero-content ${heroReady ? 'is-live' : ''}`}>
-          <div className="hero-tag-row">
-            <span className="hero-dash" />
-            <span className="hero-tag mono">PHOTOGRAPHY PORTFOLIO</span>
-            <span className="hero-tag-year mono">/ This_Life</span>
-          </div>
-
-          <h1 className="hero-h1">
-            {HERO_LINES.map((line, li) => {
-              const lineStart = allChars.findIndex(c => c.line === li);
-              const lineEnd = lineStart + line.text.length;
-              const visibleCount = Math.max(0, Math.min(typed - lineStart, line.text.length));
-              const visibleText = line.text.slice(0, visibleCount);
-              const showCursor = typed >= lineStart && typed < lineEnd;
-
-              const isGlitchTarget = (line.style === 'em' || line.style === 'stroke') && glitch;
-              const wordClass = line.style === 'stroke' ? 'hero-word hero-word--stroke' :
-                line.style === 'em' ? 'hero-word hero-word--em' : 'hero-word';
-
-              return (
-                <span className="hero-line" key={li}>
-                  <span
-                    className={`${wordClass}${isGlitchTarget ? ' hero-word--glitch' : ''}`}
-                    {...(isGlitchTarget || line.style === 'em' || line.style === 'stroke' ? { 'data-text': line.text } : {})}
-                  >
-                    {[...visibleText].map((ch, ci) => (
-                      <span key={ci} className="hero-char-in">{ch}</span>
-                    ))}
-                    {showCursor && <span className="hero-cursor" />}
-                  </span>
-                </span>
-              );
-            })}
+        <div className="hero__inner">
+          <h1 className="hero__headline display">
+            {HEADLINE.map((line, i) => (
+              <div key={i}>
+                {i === HEADLINE.length - 1 ? (
+                  <span className="accent-text">{line}</span>
+                ) : (
+                  line
+                )}
+              </div>
+            ))}
           </h1>
-
-          <div className="hero-footer">
-            <p className="hero-desc">
-              I take photos here and there.
+          <div className="hero__foot">
+            <p className="hero__statement">
+              {STATEMENT_LEAD}
+              <span className="accent-text">{STATEMENT_ACCENT}</span>
             </p>
-            <Link href="/gallery" className="hero-cta">
-              <span className="hero-cta-text">Explore Gallery</span>
-              <span className="hero-cta-arrow">
-                <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                  <path d="M10 18H26M26 18L20 12M26 18L20 24" stroke="currentColor" strokeWidth="1.5" />
-                </svg>
-              </span>
-            </Link>
           </div>
         </div>
 
-        {/* Side elements */}
-        <div className="hero-side-scroll">
-          <span className="mono">SCROLL</span>
-          <span className="hero-scroll-bar" />
+        <div className="hero__scroll">
+          <i />
+          Scroll
         </div>
-
-        <div className="hero-watermark">GOODMORNING<br />TAKAYA</div>
       </section>
+
+      {/* ══ TICKER ══ */}
+      <Ticker items={TICKER} />
 
       {/* ══ FEATURED PROJECTS ══ */}
       <section className="feat-section">
@@ -161,16 +109,19 @@ const Home = ({ photos, categories, featuredProjects }) => {
             <h2 className="section-title">Featured</h2>
           </div>
           <span className="section-rule" />
-          <span className="section-meta mono">{featuredProjects.length} {featuredProjects.length === 1 ? 'PROJECT' : 'PROJECTS'}</span>
+          <span className="section-meta mono">
+            {featuredProjects.length}{" "}
+            {featuredProjects.length === 1 ? "PROJECT" : "PROJECTS"}
+          </span>
         </div>
         {featuredProjects.length > 0 ? (
           <EditorialSpread
-            photos={featuredProjects.map(p => ({
+            photos={featuredProjects.map((p) => ({
               ...(p.coverPhoto || {}),
               id: p.id,
               title: p.title,
-              category: '',
-              categoryName: 'Project',
+              category: "",
+              categoryName: "Project",
               _slug: p.slug,
             }))}
             onPhotoClick={(photo) => router.push(`/projects/${photo._slug}`)}
@@ -189,7 +140,9 @@ const Home = ({ photos, categories, featuredProjects }) => {
           <h2 className="section-title">Categories</h2>
         </div>
 
-        <div className="view-cursor" ref={catCursorRef}><span>VIEW</span></div>
+        <div className="view-cursor" ref={catCursorRef}>
+          <span>VIEW</span>
+        </div>
         <div className="cat-grid" ref={catRef}>
           {categories.map((cat, i) => {
             const photo = cat.coverPhoto;
@@ -202,10 +155,12 @@ const Home = ({ photos, categories, featuredProjects }) => {
                 <div className="cat-img-wrap">
                   {photo && (
                     <img
-                      src={getImageUrl(photo, 'display')}
+                      src={getImageUrl(photo, "display")}
                       alt={cat.name}
                       loading="lazy"
-                      onError={(e) => { e.target.src = getFallbackUrl(photo); }}
+                      onError={(e) => {
+                        e.target.src = getFallbackUrl(photo);
+                      }}
                     />
                   )}
                 </div>
@@ -226,20 +181,30 @@ const Home = ({ photos, categories, featuredProjects }) => {
         <div className="cta-inner reveal">
           <span className="cta-tag mono">COLLABORATION</span>
           <h2 className="cta-h2">
-            LET'S WORK<br /><span className="cta-stroke">TOGETHER</span>
+            LET'S WORK
+            <br />
+            <span className="cta-stroke">TOGETHER</span>
           </h2>
-          <p className="cta-desc">Available for commissions, collaborations, and creative projects.</p>
+          <p className="cta-desc">
+            Available for commissions, collaborations, and creative projects.
+          </p>
           <Link href="/about" className="cta-btn">
             <span className="cta-btn-text">GET IN TOUCH</span>
             <span className="cta-btn-icon">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.2">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.2"
+              >
                 <path d="M5 13L13 5M13 5H6M13 5V12" />
               </svg>
             </span>
           </Link>
         </div>
       </section>
-
     </div>
   );
 };

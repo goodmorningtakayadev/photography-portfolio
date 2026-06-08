@@ -32,7 +32,7 @@
 .about-h1-stroke {
   color: transparent;
   -webkit-text-stroke: 1.5px var(--ember);
-  filter: drop-shadow(0 0 10px rgba(68, 217, 187, 0.2));
+  filter: drop-shadow(0 0 10px rgba(126, 20, 32, 0.2));
 }
 
 .about-hero-accent {

@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { eq, gte, ne, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
-import { deleteObject } from "@/lib/storage";
 import { db } from "@/db";
-import {
-  photos,
-  photoVariants,
-  photoCategories,
-  projects,
-} from "@/db/schema";
+import { photos, photoCategories } from "@/db/schema";
 import { getPhotoById } from "@/db/queries/photos";
+import { getProjectSlugsAffectedByPhotos } from "@/db/queries/projects";
+import {
+  archivePhotos,
+  restorePhotos,
+  permanentlyDeletePhotos,
+} from "@/lib/photo-lifecycle";
+import { reprocessPhoto } from "@/lib/upload-pipeline";
+import {
+  revalidateForPhotoChange,
+  revalidateForPhotoLifecycle,
+} from "@/lib/revalidation";
 
 export const dynamic = "force-dynamic";
 
@@ -102,40 +106,33 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     // Handle lifecycle actions
     if (action === "archive") {
-      await db
-        .update(photos)
-        .set({ status: "archived", updatedAt: new Date() })
-        .where(eq(photos.id, id));
-      // Clear cover_photo_id references on projects
-      await db
-        .update(projects)
-        .set({ coverPhotoId: null, updatedAt: new Date() })
-        .where(eq(projects.coverPhotoId, id));
-
-      revalidatePath("/");
-      revalidatePath("/gallery");
-
+      const event = await archivePhotos([id]);
+      if (event.photoIds.length === 0) {
+        return NextResponse.json(
+          { data: null, error: "Photo already archived" },
+          { status: 400 },
+        );
+      }
+      revalidateForPhotoLifecycle(event);
       return NextResponse.json({
-        data: { id, status: "archived" },
+        data: {
+          id,
+          status: "archived",
+          affectedProjectSlugs: event.affectedProjectSlugs,
+        },
         error: null,
       });
     }
 
     if (action === "restore") {
-      if (photo.status !== "archived") {
+      const event = await restorePhotos([id]);
+      if (event.photoIds.length === 0) {
         return NextResponse.json(
           { data: null, error: "Only archived photos can be restored" },
           { status: 400 },
         );
       }
-      await db
-        .update(photos)
-        .set({ status: "ready", updatedAt: new Date() })
-        .where(eq(photos.id, id));
-
-      revalidatePath("/");
-      revalidatePath("/gallery");
-
+      revalidateForPhotoLifecycle(event);
       return NextResponse.json({
         data: { id, status: "ready" },
         error: null,
@@ -143,39 +140,31 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
 
     if (action === "reprocess") {
-      if (photo.status !== "failed") {
-        return NextResponse.json(
-          { data: null, error: "Only failed photos can be reprocessed" },
-          { status: 400 },
-        );
-      }
-      // Delete existing variants
-      await db
-        .delete(photoVariants)
-        .where(eq(photoVariants.photoId, id));
-      // Reset status
-      await db
-        .update(photos)
-        .set({ status: "processing", updatedAt: new Date() })
-        .where(eq(photos.id, id));
-
-      // Fire-and-forget processing trigger
-      const processUrl = new URL("/api/uploads/process", request.url);
-      fetch(processUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: request.headers.get("cookie") ?? "",
-        },
-        body: JSON.stringify({ photoId: id }),
-      }).catch((err) =>
-        console.error("Failed to trigger reprocessing:", err),
-      );
-
-      return NextResponse.json({
-        data: { id, status: "processing" },
-        error: null,
+      const result = await reprocessPhoto({
+        photoId: id,
+        baseUrl: new URL(request.url),
+        cookie: request.headers.get("cookie"),
       });
+      switch (result.kind) {
+        case "requeued":
+          return NextResponse.json({
+            data: { id, status: "processing" },
+            error: null,
+          });
+        case "photo_not_found":
+          return NextResponse.json(
+            { data: null, error: "Photo not found" },
+            { status: 404 },
+          );
+        case "wrong_status":
+          return NextResponse.json(
+            {
+              data: null,
+              error: "Only failed photos can be reprocessed",
+            },
+            { status: 400 },
+          );
+      }
     }
 
     // Handle field updates
@@ -241,8 +230,15 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       }
     }
 
-    revalidatePath("/");
-    revalidatePath("/gallery");
+    // Caption and altText surface on /projects/[slug]; isPublished and
+    // gallerySortOrder don't (project pages filter on status='ready' only).
+    // Categories don't appear on project pages either.
+    const projectVisibleChange =
+      fields.caption !== undefined || fields.altText !== undefined;
+    const affectedProjectSlugs = projectVisibleChange
+      ? await getProjectSlugsAffectedByPhotos([id])
+      : [];
+    revalidateForPhotoChange({ affectedProjectSlugs });
 
     return NextResponse.json({ data: { id, updated: true }, error: null });
   } catch (error) {
@@ -288,68 +284,25 @@ export async function DELETE(request: Request, { params }: RouteContext) {
     );
   }
 
-  // Fetch photo and variants (need storage keys before deleting DB rows)
-  const [photo] = await db
-    .select()
-    .from(photos)
-    .where(eq(photos.id, id))
-    .limit(1);
-
-  if (!photo) {
-    return NextResponse.json(
-      { data: null, error: "Photo not found" },
-      { status: 404 },
-    );
-  }
-
-  const variants = await db
-    .select()
-    .from(photoVariants)
-    .where(eq(photoVariants.photoId, id));
-
   try {
-    // 1. Clear cover_photo_id references on projects
-    await db
-      .update(projects)
-      .set({ coverPhotoId: null, updatedAt: new Date() })
-      .where(eq(projects.coverPhotoId, id));
+    const event = await permanentlyDeletePhotos([id]);
 
-    // 2. Delete R2 files (variants first, then original)
-    const orphanedKeys: string[] = [];
-
-    for (const variant of variants) {
-      try {
-        await deleteObject(variant.storageKey);
-      } catch (err) {
-        console.error(
-          `Failed to delete variant ${variant.storageKey}:`,
-          err,
-        );
-        orphanedKeys.push(variant.storageKey);
-      }
-    }
-
-    try {
-      await deleteObject(photo.storageKey);
-    } catch (err) {
-      console.error(
-        `Failed to delete original ${photo.storageKey}:`,
-        err,
+    if (event.photoIds.length === 0) {
+      return NextResponse.json(
+        { data: null, error: "Photo not found" },
+        { status: 404 },
       );
-      orphanedKeys.push(photo.storageKey);
     }
 
-    // 3. Delete DB row (ON DELETE CASCADE handles join tables + variants)
-    await db.delete(photos).where(eq(photos.id, id));
-
-    revalidatePath("/");
-    revalidatePath("/gallery");
-    revalidatePath("/projects");
+    revalidateForPhotoLifecycle(event);
 
     return NextResponse.json({
       data: {
         deleted: true,
-        orphanedKeys: orphanedKeys.length > 0 ? orphanedKeys : undefined,
+        orphanedKeys:
+          event.orphanedStorageKeys.length > 0
+            ? event.orphanedStorageKeys
+            : undefined,
       },
       error: null,
     });

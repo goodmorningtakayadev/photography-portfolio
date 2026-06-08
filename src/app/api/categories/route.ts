@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 import { getSession } from "@/lib/session";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { getAllCategories } from "@/db/queries/admin";
+import { revalidateForCategoryChange } from "@/lib/revalidation";
 
 export const dynamic = "force-dynamic";
 
@@ -116,8 +116,7 @@ export async function POST(request: Request) {
       .values({ name, slug, sortOrder: nextOrder })
       .returning();
 
-    revalidatePath("/");
-    revalidatePath("/gallery");
+    revalidateForCategoryChange();
 
     return NextResponse.json({ data: created, error: null }, { status: 201 });
   } catch (error: unknown) {

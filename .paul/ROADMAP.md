@@ -18,7 +18,7 @@ Phases: 6 of 7 complete
 | 4 | Object Storage & Image Processing | 2 | Complete | 2026-03-25 |
 | 5 | Admin Interface | 3 | Complete | 2026-03-25 |
 | 6 | Public Pages Data Migration | 2 | Complete | 2026-03-26 |
-| 7 | Polish & Deploy | TBD | Not started | - |
+| 7 | Polish & Deploy | 1 | Planning | - |
 
 ## Phase Details
 
@@ -135,7 +135,7 @@ Phases: 6 of 7 complete
 - Environment variable setup in Vercel dashboard
 
 **Plans:**
-- [ ] 07-01: Final polish and Vercel deployment
+- [ ] 07-01: SEO metadata, font optimization, dynamic sitemap, and production config
 
 ---
 *Roadmap created: 2026-03-25*

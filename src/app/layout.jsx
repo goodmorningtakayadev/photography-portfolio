@@ -1,16 +1,36 @@
+import { Archivo, Inter } from 'next/font/google';
 import './globals.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
+// Archivo — variable grotesque driving both display and body.
+// wdth axis is loaded so display type can run expanded (~112%); wght axis
+// (full range) is loaded by default so headlines can run heavy (800).
+const archivo = Archivo({
+  subsets: ['latin'],
+  axes: ['wdth'],
+  display: 'swap',
+  variable: '--font-archivo',
+});
+
+// Inter — metadata / label role: small, uppercase, wide-tracked.
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 export const metadata = {
   title: 'Photography Portfolio',
   description: 'A curated collection of photographs exploring light, emotion, and the beauty of everyday life.',
-  metadataBase: new URL('https://example.com'),
+  metadataBase: new URL(siteUrl),
   openGraph: {
     type: 'website',
     title: 'Photography Portfolio',
     description: 'A curated collection of photographs exploring light, emotion, and the beauty of everyday life.',
-    url: 'https://example.com/',
+    url: siteUrl,
     images: ['/photos/optimized/1-display.webp'],
   },
   twitter: {
@@ -20,7 +40,7 @@ export const metadata = {
     images: ['/photos/optimized/1-display.webp'],
   },
   other: {
-    'theme-color': '#0b0b0b',
+    'theme-color': '#0a0a0b',
   },
 };
 
@@ -29,7 +49,6 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <head>
         <link rel="dns-prefetch" href="https://api.web3forms.com" />
-        <link rel="preload" href="/photos/vintage-aesthetics-3.jpg" as="image" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -39,12 +58,12 @@ export default function RootLayout({ children }) {
                 {
                   "@type": "WebSite",
                   "name": "Photography Portfolio",
-                  "url": "https://example.com"
+                  "url": siteUrl
                 },
                 {
                   "@type": "Person",
                   "name": "Takaya",
-                  "url": "https://example.com",
+                  "url": siteUrl,
                   "description": "Photographer exploring light, emotion, and the beauty of everyday life.",
                   "sameAs": []
                 }
@@ -53,7 +72,7 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body>
+      <body className={`${archivo.variable} ${inter.variable}`}>
         <div className="app">
           <Header />
           <main className="main-content">

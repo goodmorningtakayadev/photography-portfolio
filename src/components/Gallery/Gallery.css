@@ -63,7 +63,7 @@
   color: var(--ember);
   display: block;
   margin-bottom: 0.3rem;
-  text-shadow: 0 0 10px rgba(68, 217, 187, 0.3);
+  text-shadow: 0 0 10px rgba(126, 20, 32, 0.3);
 }
 
 .g-title {
@@ -88,7 +88,7 @@
 
 .g-item:hover .g-border-flash {
   border-color: var(--ember);
-  box-shadow: inset 0 0 15px rgba(68, 217, 187, 0.06);
+  box-shadow: inset 0 0 15px rgba(126, 20, 32, 0.06);
 }
 
 /* Top ember accent bar on hover */

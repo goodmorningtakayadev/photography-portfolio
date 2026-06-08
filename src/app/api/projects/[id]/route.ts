@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db } from "@/db";
 import { projects, projectPhotos } from "@/db/schema";
 import { getProjectByIdAdmin } from "@/db/queries/admin";
+import { revalidateForProjectChange } from "@/lib/revalidation";
 
 export const dynamic = "force-dynamic";
 
@@ -195,11 +195,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       .where(eq(projects.id, id))
       .returning();
 
-    revalidatePath("/projects");
-    revalidatePath("/projects/" + updated.slug);
-    if (existing.slug !== updated.slug) {
-      revalidatePath("/projects/" + existing.slug);
-    }
+    const slugs =
+      existing.slug !== updated.slug
+        ? [existing.slug, updated.slug]
+        : [updated.slug];
+    revalidateForProjectChange({ slugs });
 
     return NextResponse.json({ data: updated, error: null });
   } catch (error: unknown) {
@@ -270,8 +270,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   try {
     await db.delete(projects).where(eq(projects.id, id));
 
-    revalidatePath("/projects");
-    revalidatePath("/projects/" + existing.slug);
+    revalidateForProjectChange({ slugs: [existing.slug] });
 
     return NextResponse.json({ data: { deleted: true }, error: null });
   } catch (error) {

@@ -140,6 +140,20 @@ export const projectPhotos = pgTable(
   ]
 );
 
+// Site settings — singleton row of site-wide configuration (id is always "site")
+export const siteSettings = pgTable("site_settings", {
+  id: varchar("id", { length: 32 }).primaryKey().default("site"),
+  heroPhotoId: uuid("hero_photo_id").references(() => photos.id, {
+    onDelete: "set null",
+  }),
+  // object-position percentages (0–100); 50/50 = centered crop
+  heroFocalX: integer("hero_focal_x").notNull().default(50),
+  heroFocalY: integer("hero_focal_y").notNull().default(50),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 // Inferred types
 export type Photo = typeof photos.$inferSelect;
 export type NewPhoto = typeof photos.$inferInsert;
@@ -151,3 +165,5 @@ export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
 export type ProjectPhoto = typeof projectPhotos.$inferSelect;
 export type NewProjectPhoto = typeof projectPhotos.$inferInsert;
+export type SiteSettings = typeof siteSettings.$inferSelect;
+export type NewSiteSettings = typeof siteSettings.$inferInsert;

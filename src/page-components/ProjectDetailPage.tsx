@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { getImageUrl, getImageSrcSet, getFallbackUrl, getAltText } from '../utils/imageHelpers';
-import type { PhotoView } from '@/lib/photo-adapter';
+import type { PhotoView } from '@/lib/public-views';
 import './ProjectDetailPage.css';
 
 type SpreadType = 'title' | 'hero' | 'diptych' | 'editorial' | 'detail' | 'end';

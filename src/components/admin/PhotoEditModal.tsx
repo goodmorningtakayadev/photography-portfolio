@@ -282,7 +282,7 @@ export function PhotoEditModal({
             <button
               type="submit"
               disabled={loading}
-              className="mono px-4 py-2 text-[11px] uppercase tracking-[0.15em] font-medium rounded-sm bg-[var(--ember)] text-[var(--white)] hover:bg-[var(--ember-hot)] disabled:opacity-50"
+              className="mono px-4 py-2 text-[11px] uppercase tracking-[0.15em] font-medium rounded-sm bg-[var(--ember)] text-[var(--black)] hover:bg-[var(--ember-hot)] disabled:opacity-50"
               style={{ transition: `all var(--t-fast) var(--ease-out)` }}
             >
               {loading ? "Saving..." : "Save Changes"}

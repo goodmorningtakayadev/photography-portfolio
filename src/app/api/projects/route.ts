@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sql } from "drizzle-orm";
 import { getSession } from "@/lib/session";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { getAllProjectsAdmin } from "@/db/queries/admin";
+import { revalidateForProjectChange } from "@/lib/revalidation";
 
 export const dynamic = "force-dynamic";
 
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       })
       .returning();
 
-    revalidatePath("/projects");
+    revalidateForProjectChange({ slugs: [created.slug] });
 
     return NextResponse.json({ data: created, error: null }, { status: 201 });
   } catch (error: unknown) {

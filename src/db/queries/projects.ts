@@ -1,4 +1,4 @@
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray, or } from "drizzle-orm";
 import { db } from "@/db";
 import {
   projects,
@@ -35,6 +35,37 @@ export async function getPublishedProjects(): Promise<ProjectWithCover[]> {
     ...r.project,
     coverPhoto: r.coverPhoto,
   }));
+}
+
+/**
+ * Distinct slugs of projects affected by these photos — i.e. projects that
+ * either contain at least one of the photos or use one as their cover.
+ *
+ * Used by mutation routes to decide which /projects/[slug] pages need
+ * revalidation when a photo changes.
+ */
+export async function getProjectSlugsAffectedByPhotos(
+  photoIds: string[],
+): Promise<string[]> {
+  if (photoIds.length === 0) return [];
+
+  const rows = await db
+    .selectDistinct({ slug: projects.slug })
+    .from(projects)
+    .where(
+      or(
+        inArray(projects.coverPhotoId, photoIds),
+        inArray(
+          projects.id,
+          db
+            .select({ id: projectPhotos.projectId })
+            .from(projectPhotos)
+            .where(inArray(projectPhotos.photoId, photoIds)),
+        ),
+      ),
+    );
+
+  return rows.map((r) => r.slug);
 }
 
 /**

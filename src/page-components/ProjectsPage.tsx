@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRevealAll } from '../hooks/useReveal';
 import { useViewCursor } from '../hooks/useViewCursor';
 import { getImageUrl, getImageSrcSet, getFallbackUrl } from '../utils/imageHelpers';
-import type { PhotoView } from '@/lib/photo-adapter';
+import type { PhotoView } from '@/lib/public-views';
 import './ProjectsPage.css';
 
 type ProjectCard = {

@@ -1,30 +1,46 @@
-/* ── Fonts ── */
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-
 /* ════════════════════════════════════════
    DARK CINEMATIC BRUTALISM
    ════════════════════════════════════════ */
 
 :root {
-  /* Palette — scorched darkness */
-  --black: #0b0b0b;
-  --black-warm: #111110;
-  --black-surface: #171615;
-  --black-elevated: #1e1d1b;
-  --white: #ece8e1;
-  --white-dim: #b0aaa3;
-  --white-ghost: #807a74;
-  --ember: #44d9bb;
-  --ember-glow: rgba(68, 217, 187, 0.14);
-  --ember-hot: #5ce3ca;
-  --ember-neon: #32cbac;
-  --border: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.14);
+  /* ── Palette ──────────────────────────────────────────
+     Canonical tokens. Legacy names below are aliased to these so
+     existing page CSS recolors without edits; new work uses these. */
 
-  /* Type */
-  --f-display: 'Syne', sans-serif;
-  --f-body: 'Outfit', sans-serif;
-  --f-mono: 'JetBrains Mono', monospace;
+  /* Neutrals — canvas & ink */
+  --bg: #0a0a0b;        /* primary background */
+  --bg-elev: #0f0f11;   /* elevated surfaces (cards, inputs) */
+  --bg-deep: #060607;   /* deepest background (hero base) */
+  --ink: #f1efe9;       /* primary text (warm off-white) */
+  --ink-soft: #b7b4ad;  /* secondary text */
+  --ink-mute: #6c6962;  /* metadata / muted labels */
+  --line: rgba(241, 239, 233, 0.16); /* hairline borders */
+  --hair: rgba(241, 239, 233, 0.08); /* faintest dividers */
+
+  /* Accent — ember */
+  --accent: #7e1420;    /* links, highlights, active states */
+  --on-accent: #f1efe9; /* light ink — legible text/icons on ember accent fills */
+  --accent-glow: rgba(126, 20, 32, 0.14);
+
+  /* Legacy aliases → new palette (kept so existing CSS keeps working) */
+  --black: var(--bg);
+  --black-warm: var(--bg-elev);
+  --black-surface: var(--bg-elev);
+  --black-elevated: var(--bg-elev);
+  --white: var(--ink);
+  --white-dim: var(--ink-soft);
+  --white-ghost: var(--ink-mute);
+  --ember: var(--accent);
+  --ember-glow: var(--accent-glow);
+  --ember-hot: var(--accent);
+  --ember-neon: var(--accent);
+  --border: var(--hair);
+  --border-strong: var(--line);
+
+  /* Type — values come from next/font CSS variables set on <body> */
+  --f-display: var(--font-archivo), sans-serif; /* Archivo — heavy/expanded display */
+  --f-body: var(--font-archivo), sans-serif;    /* Archivo — normal-weight running text */
+  --f-mono: var(--font-inter), sans-serif;      /* Inter — label/metadata role (keeps the legacy --f-mono / .mono name) */
 
   /* Space */
   --s-page: clamp(1.5rem, 5vw, 5rem);
@@ -42,6 +58,15 @@
   /* Layout */
   --max-w: 1440px;
   --header-h: 84px;
+
+  /* Display axis — Archivo variable (heavy + expanded) */
+  --disp-wght: 800;
+  --disp-wdth: 112;
+  --head-upper: uppercase;
+
+  /* Rhythm (landing handoff) */
+  --gutter: clamp(18px, 4vw, 64px);
+  --maxw: 1720px;
 }
 
 /* ── Reset ── */
@@ -75,8 +100,10 @@ h4,
 h5,
 h6 {
   font-family: var(--f-display);
-  font-weight: 700;
-  line-height: 1;
+  font-weight: 800;
+  font-stretch: 112%; /* Archivo wdth axis — expanded "Mono" direction */
+  line-height: 0.9; /* near-solid; hero stacks tighten to 0.86 locally */
+  letter-spacing: -0.02em;
   text-transform: uppercase;
   overflow-wrap: break-word;
   word-break: break-word;
@@ -130,31 +157,6 @@ button {
   flex: 1;
 }
 
-
-/* ══ FILM GRAIN ══ */
-.app::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9998;
-  opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* ══ SCANLINE overlay ══ */
-.app::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9997;
-  background: repeating-linear-gradient(to bottom,
-      transparent 0px,
-      transparent 2px,
-      rgba(0, 0, 0, 0.03) 2px,
-      rgba(0, 0, 0, 0.03) 4px);
-}
 
 /* ══ REVEAL SYSTEM ══ */
 .reveal {
@@ -284,8 +286,8 @@ button {
   font-size: 0.5rem;
   font-weight: 500;
   letter-spacing: 0.2em;
-  background: rgba(68, 217, 187, 0.05);
-  box-shadow: 0 0 20px rgba(68, 217, 187, 0.08), inset 0 0 20px rgba(68, 217, 187, 0.03);
+  background: rgba(126, 20, 32, 0.05);
+  box-shadow: 0 0 20px rgba(126, 20, 32, 0.08), inset 0 0 20px rgba(126, 20, 32, 0.03);
   transition: opacity 0.3s var(--ease-out);
 }
 
@@ -301,3 +303,17 @@ button {
 .mono {
   font-family: var(--f-mono);
 }
+
+/* Display headline utility — heavy/expanded Archivo, near-solid leading */
+.display {
+  font-family: var(--f-display);
+  font-weight: var(--disp-wght);
+  font-stretch: calc(var(--disp-wdth) * 1%);
+  font-variation-settings: "wght" var(--disp-wght), "wdth" var(--disp-wdth);
+  text-transform: var(--head-upper);
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.accent-text { color: var(--accent); }

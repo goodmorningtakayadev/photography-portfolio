@@ -10,6 +10,7 @@ const navItems = [
   { name: "Upload", href: "/admin/upload" },
   { name: "Categories", href: "/admin/categories" },
   { name: "Projects", href: "/admin/projects" },
+  { name: "Settings", href: "/admin/settings" },
 ];
 
 export function AdminSidebar() {
@@ -170,7 +171,7 @@ export function AdminSidebar() {
                     className={`absolute left-0 top-1/2 -translate-y-1/2 w-[2px] bg-[var(--ember)] ${active ? "h-5 opacity-100" : "h-0 opacity-0"}`}
                     style={{
                       boxShadow: active
-                        ? "0 0 8px rgba(68, 217, 187, 0.4)"
+                        ? "0 0 8px rgba(126, 20, 32, 0.4)"
                         : "none",
                       transition: `height var(--t-base) var(--ease-out), opacity var(--t-fast) var(--ease-out)`,
                     }}

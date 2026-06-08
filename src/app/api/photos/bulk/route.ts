@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db } from "@/db";
-import { photos, photoCategories, projects } from "@/db/schema";
+import { photoCategories } from "@/db/schema";
+import {
+  archivePhotos,
+  restorePhotos,
+  permanentlyDeletePhotos,
+} from "@/lib/photo-lifecycle";
+import {
+  revalidateForPhotoChange,
+  revalidateForPhotoLifecycle,
+} from "@/lib/revalidation";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +30,18 @@ const bulkSchema = z.discriminatedUnion("action", [
     photoIds: z.array(z.string().uuid()).min(1, "At least one photo required"),
     categoryIds: z.array(z.string().uuid()),
   }),
+  z.object({
+    action: z.literal("permanently_delete"),
+    photoIds: z.array(z.string().uuid()).min(1, "At least one photo required"),
+    confirm: z.literal(true, {
+      message: "Confirmation required. Send { confirm: true } to proceed.",
+    }),
+  }),
 ]);
 
 /**
- * POST /api/photos/bulk — Bulk archive or bulk set categories.
- * Uses db.batch() for atomicity (neon-http has no db.transaction()).
+ * POST /api/photos/bulk — Bulk lifecycle operations and category assignment.
+ * Lifecycle ops delegate to src/lib/photo-lifecycle.ts.
  */
 export async function POST(request: Request) {
   const session = await getSession();
@@ -57,44 +72,21 @@ export async function POST(request: Request) {
 
   try {
     if (parsed.data.action === "archive") {
-      const { photoIds } = parsed.data;
-
-      // Atomic batch: archive photos + clear cover references
-      await db.batch([
-        db
-          .update(photos)
-          .set({ status: "archived", updatedAt: new Date() })
-          .where(inArray(photos.id, photoIds)),
-        db
-          .update(projects)
-          .set({ coverPhotoId: null, updatedAt: new Date() })
-          .where(inArray(projects.coverPhotoId, photoIds)),
-      ]);
-
-      revalidatePath("/");
-      revalidatePath("/gallery");
-
-      return NextResponse.json({
-        data: { updated: photoIds.length },
-        error: null,
-      });
+      const event = await archivePhotos(parsed.data.photoIds);
+      revalidateForPhotoLifecycle(event);
+      return NextResponse.json({ data: event, error: null });
     }
 
     if (parsed.data.action === "restore") {
-      const { photoIds } = parsed.data;
+      const event = await restorePhotos(parsed.data.photoIds);
+      revalidateForPhotoLifecycle(event);
+      return NextResponse.json({ data: event, error: null });
+    }
 
-      await db
-        .update(photos)
-        .set({ status: "ready", updatedAt: new Date() })
-        .where(inArray(photos.id, photoIds));
-
-      revalidatePath("/");
-      revalidatePath("/gallery");
-
-      return NextResponse.json({
-        data: { updated: photoIds.length },
-        error: null,
-      });
+    if (parsed.data.action === "permanently_delete") {
+      const event = await permanentlyDeletePhotos(parsed.data.photoIds);
+      revalidateForPhotoLifecycle(event);
+      return NextResponse.json({ data: event, error: null });
     }
 
     if (parsed.data.action === "categorize") {
@@ -129,7 +121,9 @@ export async function POST(request: Request) {
         );
       }
 
-      revalidatePath("/gallery");
+      // Categorize affects /gallery (filter behavior) and / (homepage shows
+      // category covers); doesn't change project page contents.
+      revalidateForPhotoChange();
 
       return NextResponse.json({
         data: { updated: photoIds.length },

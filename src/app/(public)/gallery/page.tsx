@@ -1,27 +1,31 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import GalleryPage from "../../../page-components/GalleryPage";
-import {
-  getPublishedPhotosWithVariants,
-  getCategoriesWithCoverPhoto,
-} from "@/db/queries/photos";
-import { toPhotoView, toCategoryView } from "@/lib/photo-adapter";
+import { getGalleryView } from "@/lib/public-views";
 
 export const revalidate = 3600;
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+export const metadata: Metadata = {
+  title: "Gallery",
+  description:
+    "Browse the full photography portfolio — filter by category to explore street, portraits, travel, and more.",
+  alternates: { canonical: `${siteUrl}/gallery` },
+  openGraph: {
+    title: "Gallery",
+    description:
+      "Browse the full photography portfolio — filter by category to explore street, portraits, travel, and more.",
+    url: `${siteUrl}/gallery`,
+  },
+};
+
 export default async function GalleryRoute() {
-  const cdnUrl = process.env.NEXT_PUBLIC_CDN_URL || "";
-
-  const [photosData, categoriesData] = await Promise.all([
-    getPublishedPhotosWithVariants(),
-    getCategoriesWithCoverPhoto(),
-  ]);
-
-  const photos = photosData.map((p) => toPhotoView(p, cdnUrl));
-  const categories = categoriesData.map((c) => toCategoryView(c, cdnUrl));
+  const view = await getGalleryView();
 
   return (
     <Suspense fallback={null}>
-      <GalleryPage photos={photos} categories={categories} />
+      <GalleryPage photos={view.photos} categories={view.categories} />
     </Suspense>
   );
 }

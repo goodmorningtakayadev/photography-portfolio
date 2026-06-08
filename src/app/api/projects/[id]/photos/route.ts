@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/session";
 import { db } from "@/db";
 import { projects, projectPhotos, photos } from "@/db/schema";
+import { revalidateForProjectChange } from "@/lib/revalidation";
 
 export const dynamic = "force-dynamic";
 
@@ -119,7 +119,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       })),
     );
 
-    revalidatePath("/projects/" + project.slug);
+    revalidateForProjectChange({ slugs: [project.slug] });
 
     return NextResponse.json({
       data: { added: newPhotos.length },
@@ -204,7 +204,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
       ),
     ]);
 
-    revalidatePath("/projects/" + project.slug);
+    revalidateForProjectChange({ slugs: [project.slug] });
 
     return NextResponse.json({
       data: { reordered: photoIds.length },
@@ -289,9 +289,9 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       .where(eq(projects.id, id))
       .limit(1);
 
-    if (projectForSlug) {
-      revalidatePath("/projects/" + projectForSlug.slug);
-    }
+    revalidateForProjectChange({
+      slugs: projectForSlug ? [projectForSlug.slug] : [],
+    });
 
     return NextResponse.json({
       data: { removed: true },

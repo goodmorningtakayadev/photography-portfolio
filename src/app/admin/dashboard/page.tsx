@@ -126,7 +126,7 @@ export default async function DashboardPage() {
                 className="flex items-center justify-center w-10 h-10 rounded-full border border-[var(--ember)]"
                 style={{
                   boxShadow:
-                    "0 0 12px rgba(68, 217, 187, 0.1), inset 0 0 12px rgba(68, 217, 187, 0.05)",
+                    "0 0 12px rgba(126, 20, 32, 0.1), inset 0 0 12px rgba(126, 20, 32, 0.05)",
                 }}
               >
                 &uarr;
@@ -181,7 +181,7 @@ export default async function DashboardPage() {
                   className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--ember)] origin-left scale-x-0 group-hover:scale-x-100"
                   style={{
                     transition: `transform var(--t-base) var(--ease-out)`,
-                    boxShadow: "0 0 8px rgba(68, 217, 187, 0.4)",
+                    boxShadow: "0 0 8px rgba(126, 20, 32, 0.4)",
                   }}
                 />
 
@@ -217,7 +217,7 @@ export default async function DashboardPage() {
                   <div
                     className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full bg-[var(--ember)]"
                     style={{
-                      boxShadow: "0 0 6px rgba(68, 217, 187, 0.5)",
+                      boxShadow: "0 0 6px rgba(126, 20, 32, 0.5)",
                     }}
                     title="Published"
                   />

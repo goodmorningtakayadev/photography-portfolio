@@ -473,7 +473,7 @@ export function UploadDropzone() {
           borderRadius: "4px",
           padding: "clamp(3rem, 6vw, 5rem) 2rem",
           background: isDragging
-            ? "rgba(68, 217, 187, 0.04)"
+            ? "rgba(126, 20, 32, 0.04)"
             : "rgba(17, 17, 16, 0.4)",
           transition: `border-color var(--t-fast) var(--ease-out), background var(--t-fast) var(--ease-out)`,
           textAlign: "center",
@@ -495,7 +495,7 @@ export function UploadDropzone() {
           style={{
             borderColor: isDragging ? "var(--ember)" : "var(--border-strong)",
             boxShadow: isDragging
-              ? "0 0 20px rgba(68, 217, 187, 0.15), inset 0 0 20px rgba(68, 217, 187, 0.05)"
+              ? "0 0 20px rgba(126, 20, 32, 0.15), inset 0 0 20px rgba(126, 20, 32, 0.05)"
               : "none",
             transition: `border-color var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out)`,
           }}

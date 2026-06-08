@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { getSession } from "@/lib/session";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
+import { revalidateForCategoryChange } from "@/lib/revalidation";
 
 export const dynamic = "force-dynamic";
 
@@ -135,8 +135,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       .where(eq(categories.id, id))
       .returning();
 
-    revalidatePath("/");
-    revalidatePath("/gallery");
+    revalidateForCategoryChange();
 
     return NextResponse.json({ data: updated, error: null });
   } catch (error: unknown) {
@@ -188,8 +187,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   try {
     await db.delete(categories).where(eq(categories.id, id));
 
-    revalidatePath("/");
-    revalidatePath("/gallery");
+    revalidateForCategoryChange();
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
