@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import './Footer.css';
+import Link from "next/link";
+import "./Footer.css";
 
 const Footer = () => {
   const year = new Date().getFullYear();
@@ -27,15 +27,21 @@ const Footer = () => {
 
           <div className="ft-col">
             <span className="ft-heading mono">CONNECT</span>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a>
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">Twitter</a>
-            <a href="mailto:hello@portfolio.com">Email</a>
+            <a
+              href="https://www.instagram.com/goodmorning_takaya/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Instagram
+            </a>
+
+            <a href="mailto:goodmorning.takaya@gmail.com">Email</a>
           </div>
         </div>
 
         <div className="ft-bottom">
           <p className="mono">&copy; {year} ALL RIGHTS RESERVED</p>
-          <p className="ft-made mono">MADE WITH OBSESSION</p>
+          <p className="ft-made mono">SMILE DUDE</p>
         </div>
       </div>
     </footer>

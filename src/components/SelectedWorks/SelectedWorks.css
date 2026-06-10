@@ -1,0 +1,359 @@
+/* ════════════════════════════════════════
+   SELECTED WORKS — alternating project plates
+   Ported from selected-works-section.html (handoff source of truth).
+   Fonts/colors mapped to site tokens; reveal keyed to the site's
+   .reveal/.visible system (useRevealAll in Home.jsx).
+   ════════════════════════════════════════ */
+
+.works {
+  /* Load-bearing constant — also appears in the title-straddle calc()s. */
+  --sw-container: 1560px;
+  max-width: var(--sw-container);
+  margin: 0 auto;
+  padding: 96px 28px 120px;
+  /* own stacking context so the ::before backdrop (z -1) stays inside
+     this section and paints above the page's fixed aurora layers */
+  position: relative;
+  isolation: isolate;
+}
+
+/* full-bleed opaque backdrop — the section is a centered max-width
+   container, so its own background wouldn't cover the side margins;
+   this pseudo spans the viewport and blocks the page aurora here */
+.works::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  z-index: -1;
+  background: var(--bg);
+}
+
+/* Section-local label role: site .mono only sets the family. */
+.works .mono {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+.works a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* ── section header ── */
+.works-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 20px;
+  margin-bottom: 8px;
+}
+
+.works-head .eyebrow {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.works-head .eyebrow i {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.works-head h2 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(44px, 7.5vw, 110px);
+  line-height: 0.9;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.works-head .count {
+  text-align: right;
+  padding-bottom: 8px;
+}
+
+.works-head .count b {
+  display: block;
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(22px, 3vw, 38px);
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+/* ── project plate ── */
+.works .plate {
+  position: relative;
+  display: grid;
+  align-items: end;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 0 28px;
+  padding: 88px 0 0;
+}
+
+.works .plate + .plate {
+  margin-top: 24px;
+}
+
+.works .plate-img {
+  grid-row: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-elev);
+  aspect-ratio: 16 / 10;
+}
+
+.works .plate-img::after {
+  /* vignette so type stays readable where it overlaps */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 10, 11, 0.55), transparent 45%);
+}
+
+.works .plate-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.92) contrast(1.04);
+  transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.works .plate:hover .plate-img img {
+  transform: scale(1.035);
+}
+
+/* the title plate overlaps the image edge */
+.works .plate-title {
+  grid-row: 1;
+  z-index: 2;
+  position: relative;
+  padding-bottom: 34px;
+  pointer-events: none;
+}
+
+.works .plate-title .no {
+  display: block;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.works .plate-title h3 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(52px, 8.5vw, 150px);
+  line-height: 0.88;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  transition: color 0.3s;
+}
+
+.works .plate:hover .plate-title h3 {
+  color: var(--accent);
+}
+
+/* offset plates: images align with the "Featured Projects" header edges.
+   Each title block is CENTERED on its image's outer edge — half on the photo,
+   half on the page background. The max()/min() guards cap the straddle so the
+   title never crosses the 28px wall gap; on screens narrower than the
+   container it settles flush on the image edge instead.
+   NOTE: .plate-title's own transform is reserved for this math — never
+   put entrance animation on it. */
+.works .plate--left {
+  margin-right: clamp(48px, 12vw, 220px);
+}
+
+.works .plate--left .plate-img {
+  grid-column: 1 / -1;
+}
+
+.works .plate--left .plate-title {
+  grid-column: 1 / -1;
+  justify-self: start;
+  width: max-content;
+  text-align: left;
+  transform: translateX(max(-50%, min(0px, calc((var(--sw-container) - 100vw) / 2))));
+}
+
+.works .plate--right {
+  margin-left: clamp(48px, 12vw, 220px);
+}
+
+.works .plate--right .plate-img {
+  grid-column: 1 / -1;
+}
+
+.works .plate--right .plate-title {
+  grid-column: 1 / -1;
+  justify-self: end;
+  width: max-content;
+  text-align: left;
+  transform: translateX(min(50%, max(0px, calc((100vw - var(--sw-container)) / 2))));
+}
+
+/* meta strip under each plate — contact-sheet language */
+.works .plate-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 40px;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.works .plate-meta .mono b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.works .plate-meta .view {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.works .plate-meta .view .tick {
+  display: inline-block;
+  width: 26px;
+  height: 1px;
+  background: var(--accent);
+  transition: width 0.3s;
+}
+
+.works .plate:hover .view .tick {
+  width: 48px;
+}
+
+/* ── empty state ── */
+.works-empty {
+  padding: 64px 0 0;
+}
+
+/* ── all-projects link row ── */
+.works-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 96px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.works-foot a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 14px;
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(18px, 2.4vw, 28px);
+  text-transform: uppercase;
+  transition: color 0.25s;
+}
+
+.works-foot a span:last-child {
+  color: var(--accent);
+}
+
+.works-foot a:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 820px) {
+  .works {
+    padding: 64px 22px 80px;
+  }
+
+  .works .plate {
+    display: block;
+    padding-top: 56px;
+  }
+
+  .works .plate-img {
+    aspect-ratio: 4 / 3;
+  }
+
+  .works .plate-title {
+    padding: 0;
+    margin-bottom: 14px;
+  }
+
+  .works .plate--left,
+  .works .plate--right {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .works .plate--left .plate-title,
+  .works .plate--right .plate-title {
+    transform: none;
+    width: auto;
+    text-align: left;
+  }
+
+  .works .plate-meta .view {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* ── motion — keyed to the site reveal system (.visible, one-shot IO) ── */
+.works .reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* plates enter horizontally instead — 01 slides in from the left, 02 from
+   the right. The plate moves as one unit (image, title, meta together). */
+.works .plate--left.reveal {
+  transform: translateX(-64px);
+}
+
+.works .plate--right.reveal {
+  transform: translateX(64px);
+}
+
+/* .visible rule last — must win over the entrance transforms above.
+   It targets the .reveal element (the plate); the straddle transform
+   lives on .plate-title itself and is never reset. */
+.works .reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .works .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .works .plate-img img,
+  .works .view .tick {
+    transition: none;
+  }
+}

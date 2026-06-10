@@ -1,10 +1,13 @@
 /* ══ FOOTER ══ */
 .ft {
+  /* footer accent — brand ember lightened (same hue) to 4.57:1 on
+     --black-warm; the base ember is 1.83:1 here, unreadable as text */
+  --ft-accent: #e13e51;
   background: var(--black-warm);
   color: var(--white);
   padding: 4rem var(--s-page) 1.5rem;
   margin-top: auto;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border-strong);
 }
 
 .ft-inner {
@@ -17,7 +20,7 @@
   grid-template-columns: 2fr 1fr 1fr;
   gap: 3rem;
   padding-bottom: 3rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-strong);
 }
 
 /* Logo */
@@ -36,7 +39,7 @@
 .ft-logo-slash {
   font-family: var(--f-mono);
   font-size: 0.9rem;
-  color: var(--ember);
+  color: var(--ft-accent);
   margin: 0 2px;
 }
 
@@ -44,7 +47,9 @@
   font-family: var(--f-mono);
   font-size: 0.55rem;
   letter-spacing: 0.25em;
-  color: var(--white-ghost);
+  /* nav chrome treatment — white @ .82, same as header links */
+  color: #fff;
+  opacity: 0.82;
 }
 
 /* Columns */
@@ -57,17 +62,21 @@
 .ft-heading {
   font-size: 0.5rem;
   letter-spacing: 0.25em;
-  color: var(--white-ghost);
+  /* nav chrome treatment — white @ .82, same as header links */
+  color: #fff;
+  opacity: 0.82;
   margin-bottom: 0.5rem;
 }
 
+/* links mirror the header nav exactly: white @ .82 → full white on hover */
 .ft-col a {
   font-size: 0.82rem;
-  color: var(--white-ghost);
-  transition: color var(--t-fast);
+  color: #fff;
+  opacity: 0.82;
+  transition: opacity var(--t-fast);
 }
 
-.ft-col a:hover { color: var(--ember); }
+.ft-col a:hover { opacity: 1; }
 
 /* Bottom */
 .ft-bottom {
@@ -79,12 +88,13 @@
 .ft-bottom p {
   font-size: 0.5rem;
   letter-spacing: 0.2em;
-  color: var(--white-ghost);
+  /* nav chrome treatment — white @ .82, same as header links */
+  color: #fff;
+  opacity: 0.82;
 }
 
 .ft-made {
-  color: var(--ember) !important;
-  opacity: 0.5;
+  color: var(--ft-accent) !important;
 }
 
 @media (max-width: 768px) {

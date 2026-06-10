@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import EditorialSpread from "../components/EditorialSpread";
+import SelectedWorks from "../components/SelectedWorks/SelectedWorks";
 import { useRevealAll } from "../hooks/useReveal";
 import { useViewCursor } from "../hooks/useViewCursor";
 import { getImageUrl, getFallbackUrl } from "../utils/imageHelpers";
@@ -23,14 +22,11 @@ const TICKER = [
   "2015—2026",
 ];
 
-/* Infinite marquee — two identical rows scroll -100% for a seamless loop.
-   Each row repeats the phrases so it always overflows the viewport (even
-   ultra-wide), otherwise a gap would appear before the loop point. */
+/* Infinite marquee — items duplicated so the -50% loop is seamless. */
 function Ticker({ items }) {
-  const repeated = [...items, ...items, ...items];
   const row = (key) => (
     <div className="ticker__row" key={key} aria-hidden={key === "b"}>
-      {repeated.map((s, i) => (
+      {items.map((s, i) => (
         <span key={i}>{s}</span>
       ))}
     </div>
@@ -44,7 +40,6 @@ function Ticker({ items }) {
 }
 
 const Home = ({ photos, categories, featuredProjects, hero }) => {
-  const router = useRouter();
   const heroPhoto = hero?.photo ?? photos[0];
   const heroFocalX = hero?.focalX ?? 50;
   const heroFocalY = hero?.focalY ?? 50;
@@ -101,37 +96,8 @@ const Home = ({ photos, categories, featuredProjects, hero }) => {
       {/* ══ TICKER ══ */}
       <Ticker items={TICKER} />
 
-      {/* ══ FEATURED PROJECTS ══ */}
-      <section className="feat-section">
-        <div className="section-head reveal">
-          <div className="section-head-left">
-            <span className="section-tag mono">SELECTED WORKS</span>
-            <h2 className="section-title">Featured</h2>
-          </div>
-          <span className="section-rule" />
-          <span className="section-meta mono">
-            {featuredProjects.length}{" "}
-            {featuredProjects.length === 1 ? "PROJECT" : "PROJECTS"}
-          </span>
-        </div>
-        {featuredProjects.length > 0 ? (
-          <EditorialSpread
-            photos={featuredProjects.map((p) => ({
-              ...(p.coverPhoto || {}),
-              id: p.id,
-              title: p.title,
-              category: "",
-              categoryName: "Project",
-              _slug: p.slug,
-            }))}
-            onPhotoClick={(photo) => router.push(`/projects/${photo._slug}`)}
-          />
-        ) : (
-          <div className="feat-empty reveal">
-            <p className="feat-empty-text mono">No projects published yet.</p>
-          </div>
-        )}
-      </section>
+      {/* ══ SELECTED WORKS ══ */}
+      <SelectedWorks projects={featuredProjects} />
 
       {/* ══ CATEGORIES ══ */}
       <section className="cat-section">
@@ -181,12 +147,11 @@ const Home = ({ photos, categories, featuredProjects, hero }) => {
         <div className="cta-inner reveal">
           <span className="cta-tag mono">COLLABORATION</span>
           <h2 className="cta-h2">
-            LET'S WORK
+            HIT ME UP
             <br />
-            <span className="cta-stroke">TOGETHER</span>
           </h2>
           <p className="cta-desc">
-            Available for commissions, collaborations, and creative projects.
+            Available for collaboration and creative projects.
           </p>
           <Link href="/about" className="cta-btn">
             <span className="cta-btn-text">GET IN TOUCH</span>

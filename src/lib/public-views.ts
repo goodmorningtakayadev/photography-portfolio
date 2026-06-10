@@ -53,6 +53,7 @@ export type ProjectCardView = {
   description: string;
   coverPhoto: PhotoView | null;
   photoCount: number;
+  publishedAt: Date | null;
 };
 
 export type ProjectDetailView = {
@@ -250,6 +251,7 @@ type ProjectCardRow = {
   slug: string;
   title: string;
   description: string | null;
+  publishedAt: Date | null;
   cover: RawPhotoRow | null;
   coverThumbKey: string | null;
   coverWebKey: string | null;
@@ -480,6 +482,7 @@ async function fetchProjectCards(limit?: number): Promise<ProjectCardRow[]> {
     slug: r.project.slug,
     title: r.project.title,
     description: r.project.description,
+    publishedAt: r.project.publishedAt,
     cover: r.cover
       ? {
           id: r.cover.id,
@@ -617,5 +620,6 @@ function toProjectCardView(
     description: row.description ?? "",
     coverPhoto,
     photoCount: row.photoCount,
+    publishedAt: row.publishedAt,
   };
 }
