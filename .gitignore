@@ -34,3 +34,10 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Project docs / agent workspace — local only
+.env.example
+.paul/
+tasks/
+CLAUDE.md
+DESIGN.md
