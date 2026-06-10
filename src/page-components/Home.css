@@ -71,9 +71,15 @@
 .hero {
     position: relative;
     min-height: 100svh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 100%;
+    /* the "nudged below center" placement, as a 70/30 split of leftover
+       space. Must be fr tracks, not a translateY or a fixed-height track:
+       fr contributes nothing to the section's intrinsic height, so on short
+       viewports the bias collapses to zero (and only then does the hero
+       grow past 100svh) instead of pushing the statement past the
+       overflow:hidden bottom edge. */
+    grid-template-rows: 7fr auto 3fr;
     padding: clamp(96px, 14vh, 150px) var(--gutter) clamp(28px, 5vw, 64px);
     overflow: hidden;
     isolation: isolate;
@@ -233,18 +239,27 @@
         );
 }
 
-/* text block — left, nudged a little below center */
+/* text block — left, nudged a little below center (via the hero's grid rows) */
 .hero__inner {
     position: relative;
     z-index: 3;
+    grid-row: 2;
     width: 100%;
     max-width: var(--maxw);
     margin: 0 auto 0 0;
-    transform: translateY(clamp(3rem, 12vh, 9rem));
 }
 
 .hero__headline {
-    font-size: clamp(52px, 13vw, 223px);
+    /* the 100svh term is the hero's height budget solved for font size:
+     3 lines × 0.86 line-height = 2.58em for the headline, and ~180px for
+     the statement block + bottom padding. It keeps the block from
+     outgrowing short viewports (wide laptops at 125% OS scaling) and is
+     inert wherever 13vw / 223px already fits. */
+    font-size: clamp(
+        52px,
+        min(13vw, calc((100svh - clamp(96px, 14vh, 150px) - 180px) / 2.58)),
+        223px
+    );
     /* negative inset pulls the big type's optical left edge flush with the
      statement below (compensates the uppercase glyph side-bearing) */
     margin: 0 0 0 -0.04em;
