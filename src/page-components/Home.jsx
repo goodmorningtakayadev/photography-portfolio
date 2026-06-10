@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import SelectedWorks from "../components/SelectedWorks/SelectedWorks";
 import { useRevealAll } from "../hooks/useReveal";
@@ -46,6 +47,14 @@ const Home = ({ photos, categories, featuredProjects, hero }) => {
   const heroFocalX = hero?.focalX ?? 50;
   const heroFocalY = hero?.focalY ?? 50;
 
+  /* Fade the hero photo in once it has actually loaded — onLoad covers the
+     network case; the effect covers images already cached at hydration. */
+  const [heroPhotoIn, setHeroPhotoIn] = useState(false);
+  const heroImgRef = useRef(null);
+  useEffect(() => {
+    if (heroImgRef.current?.complete) setHeroPhotoIn(true);
+  }, []);
+
   useRevealAll();
   const { containerRef: catRef, cursorRef: catCursorRef } = useViewCursor();
 
@@ -54,12 +63,17 @@ const Home = ({ photos, categories, featuredProjects, hero }) => {
       {/* ══ HERO ══ */}
       <section className="hero">
         <div className="hero__aurora" aria-hidden="true" />
-        <div className="hero__photo" aria-hidden="true">
+        <div
+          className={`hero__photo${heroPhotoIn ? " is-loaded" : ""}`}
+          aria-hidden="true"
+        >
           {heroPhoto && (
             <img
+              ref={heroImgRef}
               src={getImageUrl(heroPhoto, "full")}
               alt=""
               style={{ objectPosition: `${heroFocalX}% ${heroFocalY}%` }}
+              onLoad={() => setHeroPhotoIn(true)}
               onError={(e) => {
                 e.target.src = getFallbackUrl(heroPhoto);
               }}

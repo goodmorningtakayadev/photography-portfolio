@@ -66,6 +66,7 @@
 
 /* nav links */
 .nav {
+  position: relative; /* anchors the sliding indicator + offsetLeft measures */
   display: flex;
   gap: 22px;
   font-family: var(--f-mono);
@@ -83,14 +84,22 @@
 }
 .nav a:hover,
 .nav a[data-on="1"] { opacity: 1; }
-.nav a[data-on="1"]::after {
-  content: "";
+
+/* sliding active-page underline — one element, translated to the active
+   link by Header.jsx (left/width measured from the DOM) */
+.nav-indicator {
   position: absolute;
   left: 0;
-  right: 0;
   bottom: -3px;
   height: 2px;
   background: var(--accent);
+  transition: transform var(--t-base) var(--ease-smooth),
+    width var(--t-base) var(--ease-smooth),
+    opacity var(--t-fast);
+  will-change: transform, width;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-indicator { transition: opacity var(--t-fast); }
 }
 
 /* status dots */

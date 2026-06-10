@@ -156,6 +156,19 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    /* fades in via .is-loaded once the image has actually loaded */
+    opacity: 0;
+    transition: opacity var(--t-dramatic) var(--ease-smooth);
+}
+
+.hero__photo.is-loaded img {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero__photo img {
+        transition: none;
+    }
 }
 
 /* frosted glass pane */
