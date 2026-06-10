@@ -10,9 +10,8 @@ import "./Home.css";
 const HEADLINE = ["GOOD", "MORNING", "TAKAYA"];
 
 /* Statement: lead clause in ink, everything after the em-dash in accent. */
-const STATEMENT_LEAD = "Just dude that likes taking pictures — ";
-const STATEMENT_ACCENT =
-  "people, places, accidents and everything in between. Big booty latina clapping machine.";
+const STATEMENT_LEAD =
+  "Just dude that likes taking pictures — people, places, accidents and everything in between. ";
 
 const TICKER = [
   "GOOD MORNING TAKAYA",
@@ -22,11 +21,14 @@ const TICKER = [
   "2015—2026",
 ];
 
-/* Infinite marquee — items duplicated so the -50% loop is seamless. */
+/* Infinite marquee — two identical rows scroll -100% for a seamless loop.
+   Each row repeats the phrases so it always overflows the viewport (even
+   ultra-wide); otherwise a gap appears before the loop point. */
 function Ticker({ items }) {
+  const repeated = [...items, ...items, ...items];
   const row = (key) => (
     <div className="ticker__row" key={key} aria-hidden={key === "b"}>
-      {items.map((s, i) => (
+      {repeated.map((s, i) => (
         <span key={i}>{s}</span>
       ))}
     </div>
@@ -80,10 +82,7 @@ const Home = ({ photos, categories, featuredProjects, hero }) => {
             ))}
           </h1>
           <div className="hero__foot">
-            <p className="hero__statement">
-              {STATEMENT_LEAD}
-              <span className="accent-text">{STATEMENT_ACCENT}</span>
-            </p>
+            <p className="hero__statement">{STATEMENT_LEAD}</p>
           </div>
         </div>
 

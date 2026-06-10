@@ -36,9 +36,9 @@ const About = () => {
           </div>
           <div className="bio-text">
             <h2 className="reveal">
-              Hello, I'm <span className="accent">Takaya</span>
+              <span className="accent">Takaya</span>
             </h2>
-            <p className="bio-lead reveal reveal-d1">yea dude</p>
+            <p className="bio-lead reveal reveal-d1">For fun</p>
             <p className="reveal reveal-d2"></p>
             <p className="reveal reveal-d2"></p>
             <div className="bio-stats reveal reveal-d3">
@@ -48,14 +48,9 @@ const About = () => {
                 <span className="stat-lbl mono">YEARS EXP.</span>
               </div>
               <div className="stat">
-                <span className="stat-num">500+</span>
+                <span className="stat-num">SOME</span>
                 <span className="stat-bar" />
                 <span className="stat-lbl mono">PROJECTS</span>
-              </div>
-              <div className="stat">
-                <span className="stat-num">50+</span>
-                <span className="stat-bar" />
-                <span className="stat-lbl mono">AWARDS</span>
               </div>
             </div>
           </div>
@@ -67,12 +62,12 @@ const About = () => {
         <div className="contact-inner">
           <span className="contact-tag mono reveal">GET IN TOUCH</span>
           <h2 className="contact-h2 reveal">
-            LET'S CREATE
+            LET'S
             <br />
-            <span className="contact-stroke">TOGETHER</span>
+            <span className="contact-stroke">SHOOT</span>
           </h2>
           <p className="contact-desc reveal reveal-d1">
-            Available for commissions, collaborations, and creative projects.
+            Available for collaborations, and creative projects.
           </p>
 
           <div className="view-cursor" ref={contactCursorRef}>
