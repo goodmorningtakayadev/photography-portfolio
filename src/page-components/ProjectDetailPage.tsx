@@ -255,31 +255,35 @@ export function ProjectDetailPage({
           </div>
         )}
         <div className="hero-inner">
-          <Link className="crumb mono" href="/projects">
+          <Link className="crumb mono fade" href="/projects">
             <span>←</span>
             <span>All projects</span>
           </Link>
           {hero && (
             /* contained copy of the hero frame floating over its own
-               full-bleed blow-up; decorative duplicate, so no alt */
-            <figure className="hero-frame" style={figureStyle(hero)} aria-hidden="true">
+               full-bleed blow-up; decorative duplicate, so no alt.
+               Pinned to web_1200 with NO srcset: the frame is height-capped
+               (420px → ≤750px CSS wide), and any shared srcset lets Chrome
+               substitute the backdrop's cached original/retina file (it
+               reuses larger cached candidates), repainting the frame from a
+               3000px+ source — a 4-7× browser downscale that aliases film
+               grain into visible noise. */
+            <figure className="hero-frame fade" style={figureStyle(hero)} aria-hidden="true">
               <img
                 src={getImageUrl(hero, 'display')}
-                srcSet={getImageSrcSet(hero)}
-                sizes="40vw"
                 alt=""
                 onError={(e) => {
-                  e.currentTarget.srcset = '';
-                  e.currentTarget.src = getFallbackUrl(hero);
+                  const fallback = getFallbackUrl(hero);
+                  if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
                 }}
               />
             </figure>
           )}
-          <h1>
+          <h1 className="fade">
             <span className="sub">SC.01 — {heroName}</span>
             {title}
           </h1>
-          <div className="hero-strip">
+          <div className="hero-strip fade">
             {projectType && (
               <span className="mono">
                 TYPE — <b>{projectType}</b>

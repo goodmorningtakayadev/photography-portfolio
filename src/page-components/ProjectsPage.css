@@ -76,6 +76,32 @@
   transition: border-color var(--t-base) var(--ease-out);
 }
 
+/* Entrance fade: .reveal's opacity/transform transition (global.css) and
+   .proj-card's border-color transition land on the same element at equal
+   specificity, and the `transition` shorthand that loads last cancels the
+   other. The combined list lives here at higher specificity so the fade
+   survives any bundle order. Delays stagger only the entrance properties,
+   keeping hover feedback immediate. */
+.proj-card.reveal {
+  transition:
+    border-color var(--t-base) var(--ease-out),
+    opacity var(--t-slow) var(--ease-out),
+    transform var(--t-slow) var(--ease-out);
+  transition-delay: 0s, var(--reveal-delay, 0s), var(--reveal-delay, 0s);
+}
+
+.proj-card.reveal-d1 { --reveal-delay: 0.1s; }
+.proj-card.reveal-d2 { --reveal-delay: 0.2s; }
+.proj-card.reveal-d3 { --reveal-delay: 0.35s; }
+.proj-card.reveal-d4 { --reveal-delay: 0.5s; }
+.proj-card.reveal-d5 { --reveal-delay: 0.65s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .proj-card.reveal {
+    transition: border-color var(--t-base) var(--ease-out);
+  }
+}
+
 .proj-card:hover {
   border-color: var(--border-strong);
 }

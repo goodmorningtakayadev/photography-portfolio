@@ -187,6 +187,14 @@ button {
   transition-delay: 0.5s;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* ══ KEYFRAMES ══ */
 @keyframes fadeInUp {
   from {

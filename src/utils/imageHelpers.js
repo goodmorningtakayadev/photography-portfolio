@@ -37,12 +37,13 @@ export function getImageSrcSet(photo) {
     if (photo._thumbUrl) parts.push(`${photo._thumbUrl} 200w`);
     if (photo._displayUrl) parts.push(`${photo._displayUrl} 1200w`);
     if (photo._retinaUrl) parts.push(`${photo._retinaUrl} 2400w`);
-    // The original stays the largest candidate so screens that genuinely
-    // need more than 2400px still get full quality — but only with its
-    // true pixel width (a guessed descriptor would mislead selection).
-    if (photo.url && photo.width && photo.width > 2400) {
-      parts.push(`${photo.url} ${photo.width}w`);
-    }
+    // Delivery is capped at retina_2400 — originals are archive/download
+    // artifacts, never srcset candidates. Listing the original made 100vw
+    // retina screens fetch multi-MB camera files as the LCP, and Chrome
+    // reuses a larger cached candidate for ANY img sharing the srcset, so
+    // the original bled into small slots (4-7× browser downscale aliases
+    // film grain into visible noise). A >2400px screen gets a 1.3-1.6×
+    // upscale of the Lanczos-resized 2400 instead, which stays clean.
     return parts.join(', ');
   }
   return [

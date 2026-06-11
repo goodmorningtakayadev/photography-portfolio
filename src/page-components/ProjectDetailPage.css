@@ -198,6 +198,28 @@
   color: var(--ink);
 }
 
+/* hero entrance — load choreography over the existing .fade observer:
+   crumb → frame → title → strip. The full-bleed .para backdrop stays
+   unfaded on purpose: it is the preloaded LCP image, and opacity:0 at
+   first paint would push LCP past hydration. The crumb needs the
+   combined list — its own `transition: color` shorthand is declared
+   after .fade and would cancel the fade at equal specificity. */
+.proj-scenes .crumb.fade {
+  transition: color 0.2s, opacity 0.8s ease, transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.proj-scenes .hero-frame.fade {
+  transition-delay: 0.12s;
+}
+
+.proj-scenes .hero h1.fade {
+  transition-delay: 0.28s;
+}
+
+.proj-scenes .hero-strip.fade {
+  transition-delay: 0.42s;
+}
+
 .proj-scenes .crumb span:first-child {
   color: var(--accent-bright);
 }
@@ -792,6 +814,11 @@
     opacity: 1;
     transform: none;
     transition: none;
+  }
+
+  /* outranks the generic .fade reset above (combined-list rule is 0-3-0) */
+  .proj-scenes .crumb.fade {
+    transition: color 0.2s;
   }
 
   .proj-scenes .sc-panel .panel {
