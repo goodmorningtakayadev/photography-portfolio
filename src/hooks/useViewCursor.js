@@ -20,11 +20,16 @@ export function useViewCursor() {
 
     const s = state.current;
 
+    /* Position via transform (composited) — left/top would force layout
+       every frame, which stutters while card hover transitions paint. */
+    const place = () => {
+      cursor.style.transform = `translate3d(${s.cx}px, ${s.cy}px, 0) translate(-50%, -50%)`;
+    };
+
     const animate = () => {
       s.cx += (s.tx - s.cx) * 0.25;
       s.cy += (s.ty - s.cy) * 0.25;
-      cursor.style.left = s.cx + 'px';
-      cursor.style.top = s.cy + 'px';
+      place();
       s.raf = requestAnimationFrame(animate);
     };
 
@@ -44,8 +49,7 @@ export function useViewCursor() {
       if (!s.active) {
         s.cx = s.tx;
         s.cy = s.ty;
-        cursor.style.left = s.cx + 'px';
-        cursor.style.top = s.cy + 'px';
+        place();
       }
       // Restart loop if effect cleanup killed it mid-hover
       ensureRunning();
@@ -56,8 +60,7 @@ export function useViewCursor() {
       s.ty = e.clientY;
       s.cx = s.tx;
       s.cy = s.ty;
-      cursor.style.left = s.cx + 'px';
-      cursor.style.top = s.cy + 'px';
+      place();
       ensureRunning();
     };
 

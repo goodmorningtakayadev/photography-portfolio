@@ -487,6 +487,9 @@
     transition:
         filter var(--t-slow) var(--ease-out),
         transform var(--t-slow) var(--ease-out);
+    /* Persistent compositor layer — without it each hover-in/out re-rasters
+       the full-size image, which janks fast sweeps across the card row. */
+    will-change: filter, transform;
 }
 
 .home .cat-card:hover .cat-img-wrap img {

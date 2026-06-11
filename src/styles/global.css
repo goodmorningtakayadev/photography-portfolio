@@ -281,7 +281,7 @@ button {
   left: 0;
   top: 0;
   transform: translate(-50%, -50%);
-  will-change: left, top;
+  will-change: transform;
   font-family: var(--f-mono);
   font-size: 0.5rem;
   font-weight: 500;
