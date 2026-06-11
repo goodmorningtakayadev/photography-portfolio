@@ -25,7 +25,11 @@ export async function verifySession(
 ): Promise<JWTPayload> {
   const { payload } = await jwtVerify(
     token,
-    new TextEncoder().encode(secret)
+    new TextEncoder().encode(secret),
+    // Pin the algorithm to the one we sign with. jose already rejects
+    // alg:none for a symmetric key, but pinning closes algorithm-confusion
+    // entirely and documents the contract.
+    { algorithms: ["HS256"] }
   );
   return payload;
 }
