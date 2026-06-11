@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server";
-import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { getSession } from "@/lib/session";
-import { db } from "@/db";
-import { projects, projectPhotos, photos } from "@/db/schema";
+import {
+  addPhotosToProject,
+  reorderProjectPhotos,
+  setProjectPhotoSceneNote,
+  removePhotoFromProject,
+} from "@/lib/project-lifecycle";
 import { revalidateForProjectChange } from "@/lib/revalidation";
+import { adminRoute, apiSuccess, apiError, readJson } from "@/lib/api-route";
 
 export const dynamic = "force-dynamic";
 
@@ -17,126 +19,34 @@ const addSchema = z.object({
   photoIds: z.array(z.string().uuid()).min(1, "At least one photo ID required"),
 });
 
-export async function POST(request: Request, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { data: null, error: "Unauthorized" },
-      { status: 401 },
-    );
-  }
+export const POST = adminRoute<RouteContext>(
+  "Failed to add photos to project",
+  async (request, { params }) => {
+    const { id } = await params;
 
-  const { id } = await params;
+    const body = await readJson(request, addSchema);
+    if (!body.ok) return body.response;
 
-  // Verify project exists
-  const [project] = await db
-    .select()
-    .from(projects)
-    .where(eq(projects.id, id))
-    .limit(1);
-
-  if (!project) {
-    return NextResponse.json(
-      { data: null, error: "Project not found" },
-      { status: 404 },
-    );
-  }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { data: null, error: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
-
-  const parsed = addSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { data: null, error: parsed.error.issues[0]?.message ?? "Invalid input" },
-      { status: 400 },
-    );
-  }
-
-  const { photoIds } = parsed.data;
-
-  try {
-    // Validate all photoIds reference existing ready photos
-    const validPhotos = await db
-      .select({ id: photos.id })
-      .from(photos)
-      .where(
-        and(
-          inArray(photos.id, photoIds),
-          eq(photos.status, "ready"),
-        ),
-      );
-
-    const validIds = new Set(validPhotos.map((p) => p.id));
-    const invalidIds = photoIds.filter((pid) => !validIds.has(pid));
-
-    if (invalidIds.length > 0) {
-      return NextResponse.json(
-        {
-          data: null,
-          error: `Invalid or non-ready photo IDs: ${invalidIds.join(", ")}`,
-        },
-        { status: 400 },
-      );
+    const result = await addPhotosToProject(id, body.value.photoIds);
+    switch (result.kind) {
+      case "not_found":
+        return apiError("Project not found", 404);
+      case "invalid_photos":
+        return apiError(
+          `Invalid or non-ready photo IDs: ${result.invalidIds.join(", ")}`,
+          400,
+        );
+      case "added":
+        if (result.added > 0) {
+          revalidateForProjectChange({ slugs: [result.slug] });
+        }
+        return apiSuccess({ added: result.added });
     }
-
-    // Get existing photos in project to skip duplicates and find max sort_order
-    const existing = await db
-      .select({
-        photoId: projectPhotos.photoId,
-        sortOrder: projectPhotos.sortOrder,
-      })
-      .from(projectPhotos)
-      .where(eq(projectPhotos.projectId, id));
-
-    const existingIds = new Set(existing.map((e) => e.photoId));
-    const maxOrder = existing.reduce(
-      (max, e) => Math.max(max, e.sortOrder),
-      0,
-    );
-
-    const newPhotos = photoIds.filter((pid) => !existingIds.has(pid));
-
-    if (newPhotos.length === 0) {
-      return NextResponse.json({
-        data: { added: 0 },
-        error: null,
-      });
-    }
-
-    await db.insert(projectPhotos).values(
-      newPhotos.map((photoId, i) => ({
-        projectId: id,
-        photoId,
-        sortOrder: maxOrder + i + 1,
-      })),
-    );
-
-    revalidateForProjectChange({ slugs: [project.slug] });
-
-    return NextResponse.json({
-      data: { added: newPhotos.length },
-      error: null,
-    });
-  } catch (error) {
-    console.error("POST /api/projects/[id]/photos error:", error);
-    return NextResponse.json(
-      { data: null, error: "Failed to add photos to project" },
-      { status: 500 },
-    );
-  }
-}
+  },
+);
 
 /**
  * PUT /api/projects/[id]/photos — Reorder photos (full ordered list).
- * Uses db.batch() for atomic delete+re-insert (neon-http has no db.transaction()).
  */
 const reorderSchema = z.object({
   photoIds: z
@@ -144,94 +54,23 @@ const reorderSchema = z.object({
     .min(1, "Cannot reorder with empty list"),
 });
 
-export async function PUT(request: Request, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { data: null, error: "Unauthorized" },
-      { status: 401 },
-    );
-  }
+export const PUT = adminRoute<RouteContext>(
+  "Failed to reorder photos",
+  async (request, { params }) => {
+    const { id } = await params;
 
-  const { id } = await params;
+    const body = await readJson(request, reorderSchema);
+    if (!body.ok) return body.response;
 
-  // Verify project exists
-  const [project] = await db
-    .select()
-    .from(projects)
-    .where(eq(projects.id, id))
-    .limit(1);
+    const result = await reorderProjectPhotos(id, body.value.photoIds);
+    if (result.kind === "not_found") {
+      return apiError("Project not found", 404);
+    }
 
-  if (!project) {
-    return NextResponse.json(
-      { data: null, error: "Project not found" },
-      { status: 404 },
-    );
-  }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { data: null, error: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
-
-  const parsed = reorderSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { data: null, error: parsed.error.issues[0]?.message ?? "Invalid input" },
-      { status: 400 },
-    );
-  }
-
-  const { photoIds } = parsed.data;
-
-  try {
-    // Read existing rows first — the delete+re-insert below must carry over
-    // per-membership fields (scene_note, added_at), not reset them.
-    const existingRows = await db
-      .select({
-        photoId: projectPhotos.photoId,
-        sceneNote: projectPhotos.sceneNote,
-        addedAt: projectPhotos.addedAt,
-      })
-      .from(projectPhotos)
-      .where(eq(projectPhotos.projectId, id));
-    const existingById = new Map(existingRows.map((r) => [r.photoId, r]));
-
-    // Atomic delete+re-insert via db.batch()
-    await db.batch([
-      db
-        .delete(projectPhotos)
-        .where(eq(projectPhotos.projectId, id)),
-      db.insert(projectPhotos).values(
-        photoIds.map((photoId, i) => ({
-          projectId: id,
-          photoId,
-          sortOrder: i,
-          sceneNote: existingById.get(photoId)?.sceneNote ?? null,
-          addedAt: existingById.get(photoId)?.addedAt ?? new Date(),
-        })),
-      ),
-    ]);
-
-    revalidateForProjectChange({ slugs: [project.slug] });
-
-    return NextResponse.json({
-      data: { reordered: photoIds.length },
-      error: null,
-    });
-  } catch (error) {
-    console.error("PUT /api/projects/[id]/photos error:", error);
-    return NextResponse.json(
-      { data: null, error: "Failed to reorder photos" },
-      { status: 500 },
-    );
-  }
-}
+    revalidateForProjectChange({ slugs: [result.slug] });
+    return apiSuccess({ reordered: result.count });
+  },
+);
 
 /**
  * PATCH /api/projects/[id]/photos — Set the scene note for one photo in the
@@ -243,84 +82,33 @@ const noteSchema = z.object({
   sceneNote: z.string().max(2000).nullable(),
 });
 
-export async function PATCH(request: Request, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { data: null, error: "Unauthorized" },
-      { status: 401 },
+export const PATCH = adminRoute<RouteContext>(
+  "Failed to update scene note",
+  async (request, { params }) => {
+    const { id } = await params;
+
+    const body = await readJson(request, noteSchema);
+    if (!body.ok) return body.response;
+
+    const result = await setProjectPhotoSceneNote(
+      id,
+      body.value.photoId,
+      body.value.sceneNote,
     );
-  }
-
-  const { id } = await params;
-
-  const [project] = await db
-    .select({ slug: projects.slug })
-    .from(projects)
-    .where(eq(projects.id, id))
-    .limit(1);
-
-  if (!project) {
-    return NextResponse.json(
-      { data: null, error: "Project not found" },
-      { status: 404 },
-    );
-  }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { data: null, error: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
-
-  const parsed = noteSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { data: null, error: parsed.error.issues[0]?.message ?? "Invalid input" },
-      { status: 400 },
-    );
-  }
-
-  const { photoId } = parsed.data;
-  const sceneNote = parsed.data.sceneNote?.trim() || null;
-
-  try {
-    const updated = await db
-      .update(projectPhotos)
-      .set({ sceneNote })
-      .where(
-        and(
-          eq(projectPhotos.projectId, id),
-          eq(projectPhotos.photoId, photoId),
-        ),
-      )
-      .returning({ photoId: projectPhotos.photoId });
-
-    if (updated.length === 0) {
-      return NextResponse.json(
-        { data: null, error: "Photo is not in this project" },
-        { status: 404 },
-      );
+    switch (result.kind) {
+      case "not_found":
+        return apiError("Project not found", 404);
+      case "photo_not_in_project":
+        return apiError("Photo is not in this project", 404);
+      case "note_set":
+        revalidateForProjectChange({ slugs: [result.slug] });
+        return apiSuccess({
+          photoId: body.value.photoId,
+          sceneNote: result.sceneNote,
+        });
     }
-
-    revalidateForProjectChange({ slugs: [project.slug] });
-
-    return NextResponse.json({
-      data: { photoId, sceneNote },
-      error: null,
-    });
-  } catch (error) {
-    console.error("PATCH /api/projects/[id]/photos error:", error);
-    return NextResponse.json(
-      { data: null, error: "Failed to update scene note" },
-      { status: 500 },
-    );
-  }
-}
+  },
+);
 
 /**
  * DELETE /api/projects/[id]/photos — Remove a photo from the project.
@@ -329,82 +117,20 @@ const removeSchema = z.object({
   photoId: z.string().uuid("Invalid photo ID"),
 });
 
-export async function DELETE(request: Request, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { data: null, error: "Unauthorized" },
-      { status: 401 },
-    );
-  }
+export const DELETE = adminRoute<RouteContext>(
+  "Failed to remove photo from project",
+  async (request, { params }) => {
+    const { id } = await params;
 
-  const { id } = await params;
+    const body = await readJson(request, removeSchema);
+    if (!body.ok) return body.response;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { data: null, error: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
-
-  const parsed = removeSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { data: null, error: parsed.error.issues[0]?.message ?? "Invalid input" },
-      { status: 400 },
-    );
-  }
-
-  const { photoId } = parsed.data;
-
-  try {
-    // Delete the join row
-    await db
-      .delete(projectPhotos)
-      .where(
-        and(
-          eq(projectPhotos.projectId, id),
-          eq(projectPhotos.photoId, photoId),
-        ),
-      );
-
-    // If removed photo was cover, clear it
-    const [project] = await db
-      .select({ coverPhotoId: projects.coverPhotoId })
-      .from(projects)
-      .where(eq(projects.id, id))
-      .limit(1);
-
-    if (project?.coverPhotoId === photoId) {
-      await db
-        .update(projects)
-        .set({ coverPhotoId: null, updatedAt: new Date() })
-        .where(eq(projects.id, id));
+    const result = await removePhotoFromProject(id, body.value.photoId);
+    if (result.kind === "not_found") {
+      return apiError("Project not found", 404);
     }
 
-    // Fetch project slug for revalidation
-    const [projectForSlug] = await db
-      .select({ slug: projects.slug })
-      .from(projects)
-      .where(eq(projects.id, id))
-      .limit(1);
-
-    revalidateForProjectChange({
-      slugs: projectForSlug ? [projectForSlug.slug] : [],
-    });
-
-    return NextResponse.json({
-      data: { removed: true },
-      error: null,
-    });
-  } catch (error) {
-    console.error("DELETE /api/projects/[id]/photos error:", error);
-    return NextResponse.json(
-      { data: null, error: "Failed to remove photo from project" },
-      { status: 500 },
-    );
-  }
-}
+    revalidateForProjectChange({ slugs: [result.slug] });
+    return apiSuccess({ removed: true });
+  },
+);

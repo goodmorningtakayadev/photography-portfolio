@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
-import { getSession } from "@/lib/session";
-import { db } from "@/db";
-import { categories } from "@/db/schema";
+import {
+  updateCategory,
+  deleteCategory,
+} from "@/lib/category-lifecycle";
 import { revalidateForCategoryChange } from "@/lib/revalidation";
-import { slugify, CATEGORY_SLUG_MAX } from "@/lib/slug";
+import { adminRoute, apiSuccess, apiError, readJson } from "@/lib/api-route";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
-
-// --- Validation ---
 
 const patchSchema = z.object({
   name: z
@@ -30,158 +28,57 @@ const patchSchema = z.object({
 /**
  * PATCH /api/categories/[id] — Update category fields.
  */
-export async function PATCH(request: Request, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { data: null, error: "Unauthorized" },
-      { status: 401 },
-    );
-  }
+export const PATCH = adminRoute<RouteContext>(
+  "Failed to update category",
+  async (request, { params }) => {
+    const { id } = await params;
 
-  const { id } = await params;
+    const body = await readJson(request, patchSchema);
+    if (!body.ok) return body.response;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { data: null, error: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
-
-  const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { data: null, error: parsed.error.issues[0]?.message ?? "Invalid input" },
-      { status: 400 },
-    );
-  }
-
-  // Verify category exists
-  const [existing] = await db
-    .select()
-    .from(categories)
-    .where(eq(categories.id, id))
-    .limit(1);
-
-  if (!existing) {
-    return NextResponse.json(
-      { data: null, error: "Category not found" },
-      { status: 404 },
-    );
-  }
-
-  const updates: Record<string, unknown> = {};
-
-  if (parsed.data.name !== undefined) {
-    updates.name = parsed.data.name;
-    // Auto-regenerate slug if name changes and slug not explicitly provided
-    if (parsed.data.slug === undefined) {
-      const newSlug = slugify(parsed.data.name, CATEGORY_SLUG_MAX);
-      if (!newSlug) {
-        return NextResponse.json(
-          {
-            data: null,
-            error: "Name must contain at least one alphanumeric character",
-          },
-          { status: 400 },
+    const result = await updateCategory(id, body.value);
+    switch (result.kind) {
+      case "not_found":
+        return apiError("Category not found", 404);
+      case "invalid_name":
+        return apiError(
+          "Name must contain at least one alphanumeric character",
+          400,
         );
-      }
-      updates.slug = newSlug;
+      case "invalid_slug":
+        return apiError(
+          "Slug must contain at least one alphanumeric character",
+          400,
+        );
+      case "no_fields":
+        return apiError("No fields to update", 400);
+      case "conflict":
+        return apiError(
+          "A category with this name or slug already exists",
+          409,
+        );
+      case "updated":
+        revalidateForCategoryChange();
+        return apiSuccess(result.category);
     }
-  }
-
-  if (parsed.data.slug !== undefined) {
-    const cleanSlug = slugify(parsed.data.slug, CATEGORY_SLUG_MAX);
-    if (!cleanSlug) {
-      return NextResponse.json(
-        { data: null, error: "Slug must contain at least one alphanumeric character" },
-        { status: 400 },
-      );
-    }
-    updates.slug = cleanSlug;
-  }
-
-  if (parsed.data.sortOrder !== undefined) {
-    updates.sortOrder = parsed.data.sortOrder;
-  }
-
-  if (Object.keys(updates).length === 0) {
-    return NextResponse.json(
-      { data: null, error: "No fields to update" },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const [updated] = await db
-      .update(categories)
-      .set(updates)
-      .where(eq(categories.id, id))
-      .returning();
-
-    revalidateForCategoryChange();
-
-    return NextResponse.json({ data: updated, error: null });
-  } catch (error: unknown) {
-    if (error instanceof Error && error.message.includes("unique")) {
-      return NextResponse.json(
-        {
-          data: null,
-          error: "A category with this name or slug already exists",
-        },
-        { status: 409 },
-      );
-    }
-    console.error("PATCH /api/categories/[id] error:", error);
-    return NextResponse.json(
-      { data: null, error: "Failed to update category" },
-      { status: 500 },
-    );
-  }
-}
+  },
+);
 
 /**
  * DELETE /api/categories/[id] — Delete a category.
  * FK CASCADE handles photo_categories cleanup.
  */
-export async function DELETE(request: Request, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { data: null, error: "Unauthorized" },
-      { status: 401 },
-    );
-  }
+export const DELETE = adminRoute<RouteContext>(
+  "Failed to delete category",
+  async (request, { params }) => {
+    const { id } = await params;
 
-  const { id } = await params;
-
-  const [existing] = await db
-    .select()
-    .from(categories)
-    .where(eq(categories.id, id))
-    .limit(1);
-
-  if (!existing) {
-    return NextResponse.json(
-      { data: null, error: "Category not found" },
-      { status: 404 },
-    );
-  }
-
-  try {
-    await db.delete(categories).where(eq(categories.id, id));
+    const result = await deleteCategory(id);
+    if (result.kind === "not_found") {
+      return apiError("Category not found", 404);
+    }
 
     revalidateForCategoryChange();
-
     return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    console.error("DELETE /api/categories/[id] error:", error);
-    return NextResponse.json(
-      { data: null, error: "Failed to delete category" },
-      { status: 500 },
-    );
-  }
-}
+  },
+);
