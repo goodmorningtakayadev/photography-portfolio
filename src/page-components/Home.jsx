@@ -5,7 +5,7 @@ import Link from "next/link";
 import SelectedWorks from "../components/SelectedWorks/SelectedWorks";
 import { useRevealAll } from "../hooks/useReveal";
 import { useViewCursor } from "../hooks/useViewCursor";
-import { getImageUrl, getFallbackUrl } from "../utils/imageHelpers";
+import { getImageUrl, getImageSrcSet, getFallbackUrl } from "../utils/imageHelpers";
 import "./Home.css";
 
 const HEADLINE = ["GOOD", "MORNING", "TAKAYA"];
@@ -71,10 +71,15 @@ const Home = ({ photos, categories, featuredProjects, hero }) => {
             <img
               ref={heroImgRef}
               src={getImageUrl(heroPhoto, "full")}
+              srcSet={getImageSrcSet(heroPhoto)}
+              sizes="100vw"
+              fetchPriority="high"
+              decoding="async"
               alt=""
               style={{ objectPosition: `${heroFocalX}% ${heroFocalY}%` }}
               onLoad={() => setHeroPhotoIn(true)}
               onError={(e) => {
+                e.target.srcset = "";
                 e.target.src = getFallbackUrl(heroPhoto);
               }}
             />

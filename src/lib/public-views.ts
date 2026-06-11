@@ -49,6 +49,9 @@ export type PhotoView = {
   height: number | null;
   _thumbUrl: string | null;
   _displayUrl: string | null;
+  /** retina_2400 variant — srcset candidate between web_1200 and the
+      original; lets large/HiDPI screens skip the multi-MB original. */
+  _retinaUrl: string | null;
 };
 
 export type CategoryView = {
@@ -215,6 +218,7 @@ export const getProjectViewBySlug = cache(async (
       gallerySortOrder: r.photo.gallerySortOrder,
       thumbKey: variantMap.get(r.photo.id)?.thumb ?? null,
       webKey: variantMap.get(r.photo.id)?.web ?? null,
+      retinaKey: variantMap.get(r.photo.id)?.retina ?? null,
       categorySlugs: catMap.get(r.photo.id)?.slugs ?? [],
       categoryNames: catMap.get(r.photo.id)?.names ?? [],
       exifData: r.photo.exifData,
@@ -263,6 +267,9 @@ type RawPhotoRow = {
 type FullPhotoRow = RawPhotoRow & {
   thumbStorageKey: string | null;
   webStorageKey: string | null;
+  retinaStorageKey: string | null;
+  width: number | null;
+  height: number | null;
   categorySlugs: string[];
   categoryNames: string[];
 };
@@ -288,6 +295,7 @@ type ProjectCardRow = {
   cover: RawPhotoRow | null;
   coverThumbKey: string | null;
   coverWebKey: string | null;
+  coverRetinaKey: string | null;
   coverCategorySlugs: string[];
   coverCategoryNames: string[];
   photoCount: number;
@@ -322,6 +330,9 @@ async function fetchPublishedPhotosWithVariants(
     gallerySortOrder: p.gallerySortOrder,
     thumbStorageKey: variantMap.get(p.id)?.thumb ?? null,
     webStorageKey: variantMap.get(p.id)?.web ?? null,
+    retinaStorageKey: variantMap.get(p.id)?.retina ?? null,
+    width: p.width,
+    height: p.height,
     categorySlugs: catMap.get(p.id)?.slugs ?? [],
     categoryNames: catMap.get(p.id)?.names ?? [],
   }));
@@ -347,6 +358,9 @@ async function fetchHeroPhotoView(photoId: string): Promise<PhotoView | null> {
     gallerySortOrder: row.gallerySortOrder,
     thumbKey: variantMap.get(photoId)?.thumb ?? null,
     webKey: variantMap.get(photoId)?.web ?? null,
+    retinaKey: variantMap.get(photoId)?.retina ?? null,
+    width: row.width,
+    height: row.height,
     categorySlugs: catMap.get(photoId)?.slugs ?? [],
     categoryNames: catMap.get(photoId)?.names ?? [],
   });
@@ -354,7 +368,10 @@ async function fetchHeroPhotoView(photoId: string): Promise<PhotoView | null> {
 
 async function fetchVariantsAndCategories(photoIds: string[]): Promise<
   [
-    Map<string, { thumb: string | null; web: string | null }>,
+    Map<
+      string,
+      { thumb: string | null; web: string | null; retina: string | null }
+    >,
     Map<string, { slugs: string[]; names: string[] }>,
   ]
 > {
@@ -382,12 +399,17 @@ async function fetchVariantsAndCategories(photoIds: string[]): Promise<
 
   const variantMap = new Map<
     string,
-    { thumb: string | null; web: string | null }
+    { thumb: string | null; web: string | null; retina: string | null }
   >();
   for (const v of variantRows) {
-    const entry = variantMap.get(v.photoId) ?? { thumb: null, web: null };
+    const entry = variantMap.get(v.photoId) ?? {
+      thumb: null,
+      web: null,
+      retina: null,
+    };
     if (v.variantType === "thumb_200") entry.thumb = v.storageKey;
     if (v.variantType === "web_1200") entry.web = v.storageKey;
+    if (v.variantType === "retina_2400") entry.retina = v.storageKey;
     variantMap.set(v.photoId, entry);
   }
 
@@ -525,6 +547,9 @@ async function fetchProjectCards(limit?: number): Promise<ProjectCardRow[]> {
       : null,
     coverThumbKey: r.cover ? variantMap.get(r.cover.id)?.thumb ?? null : null,
     coverWebKey: r.cover ? variantMap.get(r.cover.id)?.web ?? null : null,
+    coverRetinaKey: r.cover
+      ? variantMap.get(r.cover.id)?.retina ?? null
+      : null,
     coverCategorySlugs: r.cover ? catMap.get(r.cover.id)?.slugs ?? [] : [],
     coverCategoryNames: r.cover ? catMap.get(r.cover.id)?.names ?? [] : [],
     photoCount: countMap.get(r.project.id) ?? 0,
@@ -552,6 +577,7 @@ function buildPhotoView(args: {
   gallerySortOrder: number;
   thumbKey: string | null;
   webKey: string | null;
+  retinaKey?: string | null;
   categorySlugs: string[];
   categoryNames: string[];
   exifData?: unknown;
@@ -581,6 +607,7 @@ function buildPhotoView(args: {
     height: args.height ?? null,
     _thumbUrl: cdnUrlFor(args.thumbKey),
     _displayUrl: cdnUrlFor(args.webKey),
+    _retinaUrl: cdnUrlFor(args.retinaKey ?? null),
   };
 }
 
@@ -595,6 +622,9 @@ function toPhotoView(row: FullPhotoRow): PhotoView {
     gallerySortOrder: row.gallerySortOrder,
     thumbKey: row.thumbStorageKey,
     webKey: row.webStorageKey,
+    retinaKey: row.retinaStorageKey,
+    width: row.width,
+    height: row.height,
     categorySlugs: row.categorySlugs,
     categoryNames: row.categoryNames,
   });
@@ -634,6 +664,7 @@ function toCategoryView(row: CategoryWithCoverRow): CategoryView {
       height: null,
       _thumbUrl: cdnUrlFor(row.coverWebKey),
       _displayUrl: null,
+      _retinaUrl: null,
     },
   };
 }
@@ -650,6 +681,7 @@ function toProjectCardView(row: ProjectCardRow): ProjectCardView {
         gallerySortOrder: row.cover.gallerySortOrder,
         thumbKey: row.coverThumbKey,
         webKey: row.coverWebKey,
+        retinaKey: row.coverRetinaKey,
         categorySlugs: row.coverCategorySlugs,
         categoryNames: row.coverCategoryNames,
       })

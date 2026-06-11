@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useCallback } from 'react';
-import { getImageUrl, getFallbackUrl, getAltText } from '../../utils/imageHelpers';
+import { getImageUrl, getImageSrcSet, getFallbackUrl, getAltText } from '../../utils/imageHelpers';
 import './Lightbox.css';
 
 const Lightbox = ({ photo, photos, onClose, onNavigate }) => {
@@ -52,10 +52,11 @@ const Lightbox = ({ photo, photos, onClose, onNavigate }) => {
         <img
           key={photo.id}
           src={getImageUrl(photo, 'full')}
+          srcSet={getImageSrcSet(photo)}
           alt={getAltText(photo)}
           className="lb-img"
           sizes="100vw"
-          onError={(e) => { e.target.src = getFallbackUrl(photo); }}
+          onError={(e) => { e.target.srcset = ''; e.target.src = getFallbackUrl(photo); }}
         />
       </div>
 

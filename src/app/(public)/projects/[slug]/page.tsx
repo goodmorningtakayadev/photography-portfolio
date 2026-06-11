@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
+import { preload } from "react-dom";
 import { ProjectDetailPage } from "../../../../page-components/ProjectDetailPage";
 import {
   getProjectViewBySlug,
   listPublishedProjectSlugs,
 } from "@/lib/public-views";
+import { getImageUrl, getImageSrcSet } from "../../../../utils/imageHelpers";
 
 export const revalidate = 3600;
 
@@ -50,6 +52,18 @@ export default async function ProjectDetailRoute({
 
   if (!project) {
     notFound();
+  }
+
+  // Preload the full-bleed hero (photos[0]) — the page's LCP. Mirrors the
+  // <img srcset/sizes> the hero renders.
+  const heroPhoto = project.photos[0];
+  if (heroPhoto) {
+    preload(getImageUrl(heroPhoto, "full"), {
+      as: "image",
+      imageSrcSet: getImageSrcSet(heroPhoto) || undefined,
+      imageSizes: "100vw",
+      fetchPriority: "high",
+    });
   }
 
   return (

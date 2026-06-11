@@ -241,9 +241,13 @@ export function ProjectDetailPage({
             <img
               data-para="0.12"
               src={getImageUrl(hero, 'full')}
+              srcSet={getImageSrcSet(hero)}
+              sizes="100vw"
               alt={getAltText(hero)}
               fetchPriority="high"
+              decoding="async"
               onError={(e) => {
+                e.currentTarget.srcset = '';
                 const display = getImageUrl(hero, 'display');
                 if (e.currentTarget.src !== display) e.currentTarget.src = display;
               }}

@@ -22,6 +22,12 @@ const inter = Inter({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
+// Warm the connection to the image CDN before the first <img> is parsed —
+// the LCP on every page is a CDN-hosted photo.
+const cdnOrigin = process.env.NEXT_PUBLIC_CDN_URL
+  ? new URL(process.env.NEXT_PUBLIC_CDN_URL).origin
+  : null;
+
 export const metadata = {
   title: 'Photography Portfolio',
   description: 'A curated collection of photographs exploring light, emotion, and the beauty of everyday life.',
@@ -48,6 +54,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        {cdnOrigin && <link rel="preconnect" href={cdnOrigin} />}
+        {cdnOrigin && <link rel="dns-prefetch" href={cdnOrigin} />}
         <link rel="dns-prefetch" href="https://api.web3forms.com" />
         <script
           type="application/ld+json"

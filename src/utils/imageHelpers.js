@@ -36,6 +36,13 @@ export function getImageSrcSet(photo) {
     const parts = [];
     if (photo._thumbUrl) parts.push(`${photo._thumbUrl} 200w`);
     if (photo._displayUrl) parts.push(`${photo._displayUrl} 1200w`);
+    if (photo._retinaUrl) parts.push(`${photo._retinaUrl} 2400w`);
+    // The original stays the largest candidate so screens that genuinely
+    // need more than 2400px still get full quality — but only with its
+    // true pixel width (a guessed descriptor would mislead selection).
+    if (photo.url && photo.width && photo.width > 2400) {
+      parts.push(`${photo.url} ${photo.width}w`);
+    }
     return parts.join(', ');
   }
   return [

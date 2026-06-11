@@ -31,7 +31,7 @@ const About = () => {
       <section className="about-bio">
         <div className="bio-layout">
           <div className="bio-portrait reveal">
-            <img src="/photos/japan-bw-4.jpg" alt="Photographer" />
+            <img src="/about/portrait.webp" alt="Photographer" loading="lazy" decoding="async" />
             <div className="bio-portrait-frame" />
           </div>
           <div className="bio-text">

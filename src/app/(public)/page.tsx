@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { preload } from "react-dom";
 import Home from "../../page-components/Home";
 import { getHomepageView } from "@/lib/public-views";
+import { getImageUrl, getImageSrcSet } from "../../utils/imageHelpers";
 
 export const revalidate = 3600;
 
@@ -12,6 +14,18 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const view = await getHomepageView();
+
+  // Preload the hero — it's the LCP and would otherwise wait for hydration
+  // discovery. Mirrors the <img srcset/sizes> the Home hero renders.
+  const heroPhoto = view.hero.photo ?? view.featuredPhotos[0];
+  if (heroPhoto) {
+    preload(getImageUrl(heroPhoto, "full"), {
+      as: "image",
+      imageSrcSet: getImageSrcSet(heroPhoto) || undefined,
+      imageSizes: "100vw",
+      fetchPriority: "high",
+    });
+  }
 
   return (
     <Home
