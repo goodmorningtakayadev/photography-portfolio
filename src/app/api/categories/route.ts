@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getAllCategories } from "@/db/queries/admin";
+import { getAllCategoriesWithCounts } from "@/db/queries/categories";
 import { createCategory } from "@/lib/category-lifecycle";
 import { revalidateForCategoryChange } from "@/lib/revalidation";
 import { adminRoute, apiSuccess, apiError, readJson } from "@/lib/api-route";
@@ -17,7 +17,7 @@ const createSchema = z.object({
  * GET /api/categories — List all categories with photo counts.
  */
 export const GET = adminRoute("Failed to fetch categories", async () => {
-  return apiSuccess(await getAllCategories());
+  return apiSuccess(await getAllCategoriesWithCounts());
 });
 
 /**

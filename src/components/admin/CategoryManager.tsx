@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import type { CategoryWithCount } from "@/db/queries/admin";
+import type { CategoryWithCount } from "@/db/queries/categories";
 import { slugify, CATEGORY_SLUG_MAX } from "@/lib/slug";
 import {
   createCategory,

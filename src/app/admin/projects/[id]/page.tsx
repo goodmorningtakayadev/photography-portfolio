@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 import {
   getProjectByIdAdmin,
   getAllPhotosAdmin,
-  getAllCategories,
 } from "@/db/queries/admin";
+import { getAllCategories } from "@/db/queries/categories";
 import { ProjectEditor } from "@/components/admin/ProjectEditor";
 
 export const dynamic = "force-dynamic";

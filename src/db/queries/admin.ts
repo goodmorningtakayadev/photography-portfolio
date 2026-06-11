@@ -3,56 +3,13 @@ import { db } from "@/db";
 import {
   photos,
   photoVariants,
-  categories,
-  photoCategories,
   projects,
   projectPhotos,
   type Photo,
-  type Category,
   type Project,
 } from "@/db/schema";
 
 export type PhotoWithThumb = Photo & { thumbStorageKey: string | null };
-
-export type CategoryWithCount = Category & { photoCount: number };
-
-/**
- * Get all categories ordered by sortOrder, with photo count per category.
- */
-export async function getAllCategories(): Promise<CategoryWithCount[]> {
-  const result = await db
-    .select({
-      category: categories,
-      photoCount:
-        sql<number>`cast(count(${photoCategories.photoId}) as integer)`,
-    })
-    .from(categories)
-    .leftJoin(
-      photoCategories,
-      eq(photoCategories.categoryId, categories.id),
-    )
-    .groupBy(categories.id)
-    .orderBy(asc(categories.sortOrder));
-
-  return result.map((r) => ({
-    ...r.category,
-    photoCount: r.photoCount,
-  }));
-}
-
-/**
- * Get a single category by ID.
- */
-export async function getCategoryById(
-  id: string,
-): Promise<Category | null> {
-  const [category] = await db
-    .select()
-    .from(categories)
-    .where(eq(categories.id, id))
-    .limit(1);
-  return category ?? null;
-}
 
 /**
  * Get photo counts by status for the dashboard stats cards.

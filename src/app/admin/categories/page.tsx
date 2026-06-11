@@ -1,4 +1,4 @@
-import { getAllCategories } from "@/db/queries/admin";
+import { getAllCategoriesWithCounts } from "@/db/queries/categories";
 import { CategoryManager } from "@/components/admin/CategoryManager";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default async function CategoriesPage() {
-  const categories = await getAllCategories();
+  const categories = await getAllCategoriesWithCounts();
 
   return (
     <div
