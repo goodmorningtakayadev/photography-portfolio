@@ -39,6 +39,11 @@ export function ProjectEditor({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragCounter = useRef(0);
 
+  // Scene note editing state
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
+
   // ── Save project details ──
 
   const handleSave = async (e: React.FormEvent) => {
@@ -118,6 +123,38 @@ export function ProjectEditor({
       }
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // ── Scene note ──
+
+  const handleSaveNote = async (photoId: string) => {
+    setNoteSaving(true);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/photos`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          photoId,
+          sceneNote: noteDraft.trim() || null,
+        }),
+      });
+      if (res.ok) {
+        const { data } = await res.json();
+        setProjectPhotos((prev) =>
+          prev.map((p) =>
+            p.photoId === photoId ? { ...p, sceneNote: data.sceneNote } : p,
+          ),
+        );
+        setEditingNoteId(null);
+      } else {
+        const { error } = await res.json();
+        alert(error || "Failed to save note");
+      }
+    } catch {
+      alert("Unable to connect. Try again.");
+    } finally {
+      setNoteSaving(false);
     }
   };
 
@@ -431,11 +468,12 @@ export function ProjectEditor({
                 const isCover = coverPhotoId === photo.photoId;
                 const isDragging = dragIndex === index;
                 const isDragOver = dragOverIndex === index;
+                const isEditingNote = editingNoteId === photo.photoId;
 
                 return (
                   <div
                     key={photo.photoId}
-                    draggable
+                    draggable={!isEditingNote}
                     onDragStart={(e) => handleDragStart(e, index)}
                     onDragEnter={() => handleDragEnter(index)}
                     onDragLeave={handleDragLeave}
@@ -540,11 +578,74 @@ export function ProjectEditor({
                       </div>
                     </div>
 
-                    {/* Caption */}
+                    {/* Caption + scene note */}
                     <div className="px-2 py-1.5">
                       <p className="text-[10px] text-[var(--white-ghost)] truncate">
                         {photo.caption || "Untitled"}
                       </p>
+                      {isEditingNote ? (
+                        <div className="mt-1">
+                          <textarea
+                            value={noteDraft}
+                            onChange={(e) => setNoteDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSaveNote(photo.photoId);
+                              }
+                              if (e.key === "Escape") setEditingNoteId(null);
+                            }}
+                            rows={3}
+                            maxLength={2000}
+                            autoFocus
+                            placeholder="Scene note for this project..."
+                            className="w-full bg-[var(--black-warm)] border border-[var(--border)] rounded-sm px-1.5 py-1 text-[10px] text-[var(--white)] placeholder:text-[var(--white-ghost)] focus:outline-none focus:border-[var(--ember)] resize-none"
+                          />
+                          <div className="flex justify-end gap-2 mt-1">
+                            <button
+                              type="button"
+                              onClick={() => setEditingNoteId(null)}
+                              disabled={noteSaving}
+                              className="mono text-[9px] uppercase tracking-[0.1em] text-[var(--white-ghost)] hover:text-[var(--white)]"
+                              style={{
+                                transition: `color var(--t-fast) var(--ease-out)`,
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSaveNote(photo.photoId)}
+                              disabled={noteSaving}
+                              className="mono text-[9px] uppercase tracking-[0.1em] text-[var(--ember)] hover:text-[var(--ember-hot)] disabled:opacity-50"
+                              style={{
+                                transition: `color var(--t-fast) var(--ease-out)`,
+                              }}
+                            >
+                              {noteSaving ? "Saving..." : "Save"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingNoteId(photo.photoId);
+                            setNoteDraft(photo.sceneNote ?? "");
+                          }}
+                          className={`block w-full text-left text-[9px] truncate mt-0.5 ${
+                            photo.sceneNote
+                              ? "text-[var(--white-dim)] hover:text-[var(--white)]"
+                              : "mono uppercase tracking-[0.1em] text-[var(--white-ghost)] opacity-60 hover:opacity-100 hover:text-[var(--ember)]"
+                          }`}
+                          style={{
+                            transition: `all var(--t-fast) var(--ease-out)`,
+                          }}
+                          title={photo.sceneNote ?? "Add a scene note"}
+                        >
+                          {photo.sceneNote || "+ Note"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 );

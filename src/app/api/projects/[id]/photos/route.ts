@@ -190,6 +190,18 @@ export async function PUT(request: Request, { params }: RouteContext) {
   const { photoIds } = parsed.data;
 
   try {
+    // Read existing rows first — the delete+re-insert below must carry over
+    // per-membership fields (scene_note, added_at), not reset them.
+    const existingRows = await db
+      .select({
+        photoId: projectPhotos.photoId,
+        sceneNote: projectPhotos.sceneNote,
+        addedAt: projectPhotos.addedAt,
+      })
+      .from(projectPhotos)
+      .where(eq(projectPhotos.projectId, id));
+    const existingById = new Map(existingRows.map((r) => [r.photoId, r]));
+
     // Atomic delete+re-insert via db.batch()
     await db.batch([
       db
@@ -200,6 +212,8 @@ export async function PUT(request: Request, { params }: RouteContext) {
           projectId: id,
           photoId,
           sortOrder: i,
+          sceneNote: existingById.get(photoId)?.sceneNote ?? null,
+          addedAt: existingById.get(photoId)?.addedAt ?? new Date(),
         })),
       ),
     ]);
@@ -214,6 +228,95 @@ export async function PUT(request: Request, { params }: RouteContext) {
     console.error("PUT /api/projects/[id]/photos error:", error);
     return NextResponse.json(
       { data: null, error: "Failed to reorder photos" },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * PATCH /api/projects/[id]/photos — Set the scene note for one photo in the
+ * project (null/empty clears it; public page falls back to the photo's
+ * description).
+ */
+const noteSchema = z.object({
+  photoId: z.string().uuid("Invalid photo ID"),
+  sceneNote: z.string().max(2000).nullable(),
+});
+
+export async function PATCH(request: Request, { params }: RouteContext) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json(
+      { data: null, error: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+
+  const { id } = await params;
+
+  const [project] = await db
+    .select({ slug: projects.slug })
+    .from(projects)
+    .where(eq(projects.id, id))
+    .limit(1);
+
+  if (!project) {
+    return NextResponse.json(
+      { data: null, error: "Project not found" },
+      { status: 404 },
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { data: null, error: "Invalid JSON body" },
+      { status: 400 },
+    );
+  }
+
+  const parsed = noteSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { data: null, error: parsed.error.issues[0]?.message ?? "Invalid input" },
+      { status: 400 },
+    );
+  }
+
+  const { photoId } = parsed.data;
+  const sceneNote = parsed.data.sceneNote?.trim() || null;
+
+  try {
+    const updated = await db
+      .update(projectPhotos)
+      .set({ sceneNote })
+      .where(
+        and(
+          eq(projectPhotos.projectId, id),
+          eq(projectPhotos.photoId, photoId),
+        ),
+      )
+      .returning({ photoId: projectPhotos.photoId });
+
+    if (updated.length === 0) {
+      return NextResponse.json(
+        { data: null, error: "Photo is not in this project" },
+        { status: 404 },
+      );
+    }
+
+    revalidateForProjectChange({ slugs: [project.slug] });
+
+    return NextResponse.json({
+      data: { photoId, sceneNote },
+      error: null,
+    });
+  } catch (error) {
+    console.error("PATCH /api/projects/[id]/photos error:", error);
+    return NextResponse.json(
+      { data: null, error: "Failed to update scene note" },
       { status: 500 },
     );
   }

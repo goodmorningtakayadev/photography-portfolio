@@ -39,6 +39,9 @@ export type PhotoView = {
       where the query fetches exif_data (project detail). */
   focal: string | null;
   aperture: string | null;
+  /** Per-project editorial note (project_photos.scene_note); populated only
+      in the project-detail path. Null = fall back to description. */
+  sceneNote: string | null;
   /** Intrinsic pixel dimensions; populated in the project-detail path so
       scene figures can reserve the photo's natural aspect ratio. */
   width: number | null;
@@ -154,7 +157,7 @@ export const getProjectViewBySlug = cache(async (
   if (!projectRow) return null;
 
   const photoRows = await db
-    .select({ photo: photos })
+    .select({ photo: photos, sceneNote: projectPhotos.sceneNote })
     .from(projectPhotos)
     .innerJoin(photos, eq(projectPhotos.photoId, photos.id))
     .where(
@@ -221,6 +224,7 @@ export const getProjectViewBySlug = cache(async (
       exifData: r.photo.exifData,
       width: r.photo.width,
       height: r.photo.height,
+      sceneNote: r.sceneNote,
       cdnUrl,
     }),
   );
@@ -566,6 +570,7 @@ function buildPhotoView(args: {
   exifData?: unknown;
   width?: number | null;
   height?: number | null;
+  sceneNote?: string | null;
   cdnUrl: string;
 }): PhotoView {
   const { cdnUrl } = args;
@@ -586,6 +591,7 @@ function buildPhotoView(args: {
     order: args.gallerySortOrder,
     focal: focalMm !== null ? `${Math.round(focalMm)}mm` : null,
     aperture: fNumber !== null ? `f/${Math.round(fNumber * 10) / 10}` : null,
+    sceneNote: args.sceneNote ?? null,
     width: args.width ?? null,
     height: args.height ?? null,
     _thumbUrl: args.thumbKey ? `${cdnUrl}/${args.thumbKey}` : null,
@@ -642,6 +648,7 @@ function toCategoryView(
       order: 0,
       focal: null,
       aperture: null,
+      sceneNote: null,
       width: null,
       height: null,
       _thumbUrl: row.coverWebKey ? `${cdnUrl}/${row.coverWebKey}` : null,

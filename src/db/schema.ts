@@ -130,6 +130,9 @@ export const projectPhotos = pgTable(
       .references(() => photos.id, { onDelete: "cascade" })
       .notNull(),
     sortOrder: integer("sort_order").notNull(),
+    // Editorial note for this photo *in this project* (scenes template).
+    // Null = fall back to the photo's own alt-text-derived description.
+    sceneNote: text("scene_note"),
     addedAt: timestamp("added_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

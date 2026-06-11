@@ -175,6 +175,7 @@ export type ProjectWithMeta = Project & {
 export type ProjectPhotoWithThumb = {
   photoId: string;
   sortOrder: number;
+  sceneNote: string | null;
   addedAt: Date;
   caption: string | null;
   altText: string | null;
@@ -242,6 +243,7 @@ export async function getProjectByIdAdmin(
     .select({
       photoId: projectPhotos.photoId,
       sortOrder: projectPhotos.sortOrder,
+      sceneNote: projectPhotos.sceneNote,
       addedAt: projectPhotos.addedAt,
       caption: photos.caption,
       altText: photos.altText,

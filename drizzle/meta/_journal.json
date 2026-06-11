@@ -15,6 +15,13 @@
       "when": 1780880583801,
       "tag": "0001_smooth_ulik",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781145627520,
+      "tag": "0002_burly_valeria_richards",
+      "breakpoints": true
     }
   ]
 }
