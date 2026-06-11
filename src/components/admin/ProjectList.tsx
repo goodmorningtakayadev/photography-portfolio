@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProjectWithMeta } from "@/db/queries/admin";
 import { cdnUrlFor } from "@/lib/image-url";
+import { updateProject, deleteProject } from "@/lib/admin-api";
 
 export function ProjectList({ projects }: { projects: ProjectWithMeta[] }) {
   const router = useRouter();
@@ -13,15 +14,10 @@ export function ProjectList({ projects }: { projects: ProjectWithMeta[] }) {
   const handleTogglePublish = async (project: ProjectWithMeta) => {
     setActionLoading(project.id);
     try {
-      const res = await fetch(`/api/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPublished: !project.isPublished }),
+      const result = await updateProject(project.id, {
+        isPublished: !project.isPublished,
       });
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Action failed");
-      }
+      if (!result.ok) alert(result.error);
       router.refresh();
     } finally {
       setActionLoading(null);
@@ -45,14 +41,9 @@ export function ProjectList({ projects }: { projects: ProjectWithMeta[] }) {
 
     setActionLoading(project.id);
     try {
-      const res = await fetch(`/api/projects/${project.id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm: true }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Delete failed");
+      const result = await deleteProject(project.id);
+      if (!result.ok) {
+        alert(result.error);
         setDeletingId(null);
       }
       router.refresh();

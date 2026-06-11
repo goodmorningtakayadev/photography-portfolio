@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Category } from "@/db/schema";
 import type { PhotoWithThumb } from "@/db/queries/admin";
+import { getPhoto, updatePhoto } from "@/lib/admin-api";
 
 export function PhotoEditModal({
   photo,
@@ -27,18 +28,10 @@ export function PhotoEditModal({
   useEffect(() => {
     let cancelled = false;
     async function loadPhotoCategories() {
-      try {
-        const res = await fetch(`/api/photos/${photo.id}`);
-        if (res.ok && !cancelled) {
-          const { data } = await res.json();
-          if (data?.categories) {
-            setSelectedCategoryIds(
-              data.categories.map((c: { id: string }) => c.id),
-            );
-          }
-        }
-      } catch {
-        // Non-critical
+      const result = await getPhoto(photo.id);
+      // Non-critical on failure — the picker just starts unchecked.
+      if (result.ok && !cancelled) {
+        setSelectedCategoryIds(result.data.categories.map((c) => c.id));
       }
     }
     loadPhotoCategories();
@@ -65,26 +58,19 @@ export function PhotoEditModal({
     setError("");
 
     try {
-      const res = await fetch(`/api/photos/${photo.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          caption: caption || null,
-          altText: altText || null,
-          gallerySortOrder: parseInt(sortOrder, 10) || 0,
-          categoryIds: selectedCategoryIds,
-        }),
+      const result = await updatePhoto(photo.id, {
+        caption: caption || null,
+        altText: altText || null,
+        gallerySortOrder: parseInt(sortOrder, 10) || 0,
+        categoryIds: selectedCategoryIds,
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Failed to save");
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
 
       onSaved();
-    } catch {
-      setError("Unable to connect. Try again.");
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createProject } from "@/lib/admin-api";
 
 export default function NewProjectPage() {
   const router = useRouter();
@@ -17,22 +18,14 @@ export default function NewProjectPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim() }),
-      });
+      const result = await createProject(title.trim());
 
-      const { data, error: apiError } = await res.json();
-
-      if (!res.ok) {
-        setError(apiError || "Failed to create project");
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
 
-      router.push(`/admin/projects/${data.id}`);
-    } catch {
-      setError("Unable to connect. Try again.");
+      router.push(`/admin/projects/${result.data.id}`);
     } finally {
       setLoading(false);
     }

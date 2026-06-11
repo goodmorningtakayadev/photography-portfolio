@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import type { Category } from "@/db/schema";
 import type { ProjectDetail, PhotoWithThumb } from "@/db/queries/admin";
 import { cdnUrlFor } from "@/lib/image-url";
+import {
+  updateProject,
+  addProjectPhotos,
+  reorderProjectPhotos,
+  setProjectPhotoNote,
+  removeProjectPhoto,
+} from "@/lib/admin-api";
 
 export function ProjectEditor({
   project,
@@ -53,27 +60,20 @@ export function ProjectEditor({
     setSaveSuccess(false);
 
     try {
-      const res = await fetch(`/api/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(),
-          slug: slug.trim(),
-          description: description.trim() || null,
-          isPublished,
-        }),
+      const result = await updateProject(project.id, {
+        title: title.trim(),
+        slug: slug.trim(),
+        description: description.trim() || null,
+        isPublished,
       });
 
-      const { error } = await res.json();
-      if (!res.ok) {
-        setSaveError(error || "Failed to save");
+      if (!result.ok) {
+        setSaveError(result.error);
         return;
       }
 
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
-    } catch {
-      setSaveError("Unable to connect. Try again.");
     } finally {
       setSaving(false);
     }
@@ -84,16 +84,13 @@ export function ProjectEditor({
   const handleSetCover = async (photoId: string) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ coverPhotoId: photoId }),
+      const result = await updateProject(project.id, {
+        coverPhotoId: photoId,
       });
-      if (res.ok) {
+      if (result.ok) {
         setCoverPhotoId(photoId);
       } else {
-        const { error } = await res.json();
-        alert(error || "Failed to set cover photo");
+        alert(result.error);
       }
     } finally {
       setActionLoading(false);
@@ -105,12 +102,8 @@ export function ProjectEditor({
   const handleRemovePhoto = async (photoId: string) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/projects/${project.id}/photos`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoId }),
-      });
-      if (res.ok) {
+      const result = await removeProjectPhoto(project.id, photoId);
+      if (result.ok) {
         setProjectPhotos((prev) =>
           prev.filter((p) => p.photoId !== photoId),
         );
@@ -118,8 +111,7 @@ export function ProjectEditor({
           setCoverPhotoId(null);
         }
       } else {
-        const { error } = await res.json();
-        alert(error || "Failed to remove photo");
+        alert(result.error);
       }
     } finally {
       setActionLoading(false);
@@ -131,28 +123,22 @@ export function ProjectEditor({
   const handleSaveNote = async (photoId: string) => {
     setNoteSaving(true);
     try {
-      const res = await fetch(`/api/projects/${project.id}/photos`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          photoId,
-          sceneNote: noteDraft.trim() || null,
-        }),
-      });
-      if (res.ok) {
-        const { data } = await res.json();
+      const result = await setProjectPhotoNote(
+        project.id,
+        photoId,
+        noteDraft.trim() || null,
+      );
+      if (result.ok) {
+        const { sceneNote } = result.data;
         setProjectPhotos((prev) =>
           prev.map((p) =>
-            p.photoId === photoId ? { ...p, sceneNote: data.sceneNote } : p,
+            p.photoId === photoId ? { ...p, sceneNote } : p,
           ),
         );
         setEditingNoteId(null);
       } else {
-        const { error } = await res.json();
-        alert(error || "Failed to save note");
+        alert(result.error);
       }
-    } catch {
-      alert("Unable to connect. Try again.");
     } finally {
       setNoteSaving(false);
     }
@@ -164,17 +150,12 @@ export function ProjectEditor({
     if (photoIds.length === 0) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/projects/${project.id}/photos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoIds }),
-      });
-      if (res.ok) {
+      const result = await addProjectPhotos(project.id, photoIds);
+      if (result.ok) {
         setShowPicker(false);
         router.refresh();
       } else {
-        const { error } = await res.json();
-        alert(error || "Failed to add photos");
+        alert(result.error);
       }
     } finally {
       setActionLoading(false);
@@ -234,21 +215,13 @@ export function ProjectEditor({
       setProjectPhotos(reordered);
 
       // Persist
-      try {
-        const res = await fetch(`/api/projects/${project.id}/photos`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            photoIds: reordered.map((p) => p.photoId),
-          }),
-        });
-        if (!res.ok) {
-          setProjectPhotos(prev); // revert
-          const { error } = await res.json();
-          alert(error || "Failed to reorder");
-        }
-      } catch {
+      const result = await reorderProjectPhotos(
+        project.id,
+        reordered.map((p) => p.photoId),
+      );
+      if (!result.ok) {
         setProjectPhotos(prev); // revert
+        alert(result.error);
       }
     },
     [projectPhotos, project.id],

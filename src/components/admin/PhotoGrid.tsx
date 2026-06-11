@@ -5,6 +5,17 @@ import { useRouter } from "next/navigation";
 import type { Category } from "@/db/schema";
 import type { PhotoWithThumb } from "@/db/queries/admin";
 import { cdnUrlFor } from "@/lib/image-url";
+import {
+  type ApiResult,
+  updatePhoto,
+  archivePhoto,
+  restorePhoto,
+  reprocessPhoto,
+  deletePhotoPermanently,
+  bulkArchivePhotos,
+  bulkRestorePhotos,
+  bulkCategorizePhotos,
+} from "@/lib/admin-api";
 import { StatusBadge } from "./StatusBadge";
 import { PhotoEditModal } from "./PhotoEditModal";
 
@@ -163,28 +174,21 @@ export function PhotoGrid({
     navigateWithFade(`/admin/photos${qs ? `?${qs}` : ""}`);
   };
 
-  const handlePatch = async (
+  const runPhotoAction = async (
     photoId: string,
-    body: Record<string, unknown>,
+    action: () => Promise<ApiResult<unknown>>,
   ) => {
     setActionLoading(photoId);
     try {
-      const res = await fetch(`/api/photos/${photoId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Action failed");
-      }
+      const result = await action();
+      if (!result.ok) alert(result.error);
       router.refresh();
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleDelete = async (photoId: string) => {
+  const handleDelete = (photoId: string) => {
     if (
       !confirm(
         "Permanently delete this photo? This removes all R2 files and database records. This cannot be undone.",
@@ -192,21 +196,7 @@ export function PhotoGrid({
     ) {
       return;
     }
-    setActionLoading(photoId);
-    try {
-      const res = await fetch(`/api/photos/${photoId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm: true }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Delete failed");
-      }
-      router.refresh();
-    } finally {
-      setActionLoading(null);
-    }
+    runPhotoAction(photoId, () => deletePhotoPermanently(photoId));
   };
 
   // ── Selection helpers ──
@@ -248,18 +238,8 @@ export function PhotoGrid({
     }
     setBulkLoading(true);
     try {
-      const res = await fetch("/api/photos/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "archive",
-          photoIds: Array.from(selected),
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Bulk archive failed");
-      }
+      const result = await bulkArchivePhotos(Array.from(selected));
+      if (!result.ok) alert(result.error);
       exitSelectMode();
       router.refresh();
     } finally {
@@ -278,18 +258,8 @@ export function PhotoGrid({
     }
     setBulkLoading(true);
     try {
-      const res = await fetch("/api/photos/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "restore",
-          photoIds: Array.from(selected),
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Bulk restore failed");
-      }
+      const result = await bulkRestorePhotos(Array.from(selected));
+      if (!result.ok) alert(result.error);
       exitSelectMode();
       router.refresh();
     } finally {
@@ -300,19 +270,11 @@ export function PhotoGrid({
   const handleBulkCategorize = async () => {
     setBulkLoading(true);
     try {
-      const res = await fetch("/api/photos/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "categorize",
-          photoIds: Array.from(selected),
-          categoryIds: Array.from(bulkCategoryIds),
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Bulk categorize failed");
-      }
+      const result = await bulkCategorizePhotos(
+        Array.from(selected),
+        Array.from(bulkCategoryIds),
+      );
+      if (!result.ok) alert(result.error);
       setShowCategoryPicker(false);
       exitSelectMode();
       router.refresh();
@@ -712,9 +674,11 @@ export function PhotoGrid({
                         }
                         color={photo.isPublished ? "yellow" : "green"}
                         onClick={() =>
-                          handlePatch(photo.id, {
-                            isPublished: !photo.isPublished,
-                          })
+                          runPhotoAction(photo.id, () =>
+                            updatePhoto(photo.id, {
+                              isPublished: !photo.isPublished,
+                            }),
+                          )
                         }
                       />
                     )}
@@ -722,7 +686,9 @@ export function PhotoGrid({
                       <ActionBtn
                         label="Archive"
                         onClick={() =>
-                          handlePatch(photo.id, { action: "archive" })
+                          runPhotoAction(photo.id, () =>
+                            archivePhoto(photo.id),
+                          )
                         }
                       />
                     )}
@@ -731,7 +697,9 @@ export function PhotoGrid({
                         label="Restore"
                         color="green"
                         onClick={() =>
-                          handlePatch(photo.id, { action: "restore" })
+                          runPhotoAction(photo.id, () =>
+                            restorePhoto(photo.id),
+                          )
                         }
                       />
                     )}
@@ -739,7 +707,9 @@ export function PhotoGrid({
                       <ActionBtn
                         label="Re-process"
                         onClick={() =>
-                          handlePatch(photo.id, { action: "reprocess" })
+                          runPhotoAction(photo.id, () =>
+                            reprocessPhoto(photo.id),
+                          )
                         }
                       />
                     )}

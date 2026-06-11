@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { updateSiteSettings } from "@/lib/admin-api";
 
 type PickPhoto = {
   id: string;
@@ -59,17 +60,17 @@ export function HeroSettingsEditor({
     setSaving(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ heroPhotoId, heroFocalX: focalX, heroFocalY: focalY }),
+      const result = await updateSiteSettings({
+        heroPhotoId,
+        heroFocalX: focalX,
+        heroFocalY: focalY,
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Save failed");
+      if (!result.ok) {
+        setMsg({ ok: false, text: result.error });
+        return;
+      }
       setMsg({ ok: true, text: "Saved — homepage hero updated." });
       router.refresh();
-    } catch (e) {
-      setMsg({ ok: false, text: e instanceof Error ? e.message : "Save failed" });
     } finally {
       setSaving(false);
     }

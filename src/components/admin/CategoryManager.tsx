@@ -3,6 +3,11 @@
 import { useState, useRef } from "react";
 import type { CategoryWithCount } from "@/db/queries/admin";
 import { slugify, CATEGORY_SLUG_MAX } from "@/lib/slug";
+import {
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from "@/lib/admin-api";
 
 // --- Types ---
 
@@ -42,25 +47,17 @@ export function CategoryManager({
     setError(null);
 
     try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
-      });
+      const result = await createCategory(trimmed);
 
-      const { data, error: apiError } = await res.json();
-
-      if (!res.ok) {
-        showError(apiError || "Failed to create category");
+      if (!result.ok) {
+        showError(result.error);
         return;
       }
 
       // Add to local state with photoCount = 0
-      setCategories((prev) => [...prev, { ...data, photoCount: 0 }]);
+      setCategories((prev) => [...prev, { ...result.data, photoCount: 0 }]);
       setNewName("");
       addInputRef.current?.focus();
-    } catch {
-      showError("Network error. Please try again.");
     } finally {
       setIsAdding(false);
     }
@@ -88,26 +85,17 @@ export function CategoryManager({
     }
 
     try {
-      const res = await fetch(`/api/categories/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
-      });
+      const result = await updateCategory(id, { name: trimmed });
 
-      const { data, error: apiError } = await res.json();
-
-      if (!res.ok) {
-        showError(apiError || "Failed to update category");
+      if (!result.ok) {
+        showError(result.error);
         return;
       }
 
+      const { name, slug } = result.data;
       setCategories((prev) =>
-        prev.map((c) =>
-          c.id === id ? { ...c, name: data.name, slug: data.slug } : c,
-        ),
+        prev.map((c) => (c.id === id ? { ...c, name, slug } : c)),
       );
-    } catch {
-      showError("Network error. Please try again.");
     } finally {
       setEditingId(null);
     }
@@ -117,19 +105,14 @@ export function CategoryManager({
 
   async function handleDelete(id: string) {
     try {
-      const res = await fetch(`/api/categories/${id}`, {
-        method: "DELETE",
-      });
+      const result = await deleteCategory(id);
 
-      if (!res.ok && res.status !== 204) {
-        const body = await res.json().catch(() => ({}));
-        showError(body.error || "Failed to delete category");
+      if (!result.ok) {
+        showError(result.error);
         return;
       }
 
       setCategories((prev) => prev.filter((c) => c.id !== id));
-    } catch {
-      showError("Network error. Please try again.");
     } finally {
       setDeleteConfirmId(null);
     }
@@ -154,28 +137,15 @@ export function CategoryManager({
     setCategories(newCategories);
 
     // PATCH both categories
-    try {
-      const [res1, res2] = await Promise.all([
-        fetch(`/api/categories/${current.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sortOrder: swap.sortOrder }),
-        }),
-        fetch(`/api/categories/${swap.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sortOrder: current.sortOrder }),
-        }),
-      ]);
+    const [res1, res2] = await Promise.all([
+      updateCategory(current.id, { sortOrder: swap.sortOrder }),
+      updateCategory(swap.id, { sortOrder: current.sortOrder }),
+    ]);
 
-      if (!res1.ok || !res2.ok) {
-        // Revert on failure
-        setCategories(categories);
-        showError("Failed to reorder. Reverted.");
-      }
-    } catch {
+    if (!res1.ok || !res2.ok) {
+      // Revert on failure
       setCategories(categories);
-      showError("Network error. Reorder reverted.");
+      showError("Failed to reorder. Reverted.");
     }
   }
 
