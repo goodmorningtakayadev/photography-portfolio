@@ -660,7 +660,12 @@
     }
 
     .home .cat-card {
-        flex: 1 1 100%;
+        /* in the column grid a 100% flex-basis resolves against the
+           container's indefinite height and collapses the card to 0
+           (its children are all absolutely positioned). Auto basis +
+           full width lets aspect-ratio derive the height instead. */
+        flex: 0 0 auto;
+        width: 100%;
         cursor: pointer;
     }
 
