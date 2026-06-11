@@ -76,15 +76,18 @@ function splitTitle(title: string): [string, string | null] {
 const wipeClass = (wipe: Wipe) =>
   wipe === 'right' ? 'wipe wipe--r' : wipe === 'up' ? 'wipe wipe--u' : 'wipe';
 
+/* Hide-when-empty: these return null when the data is absent and the
+   caller omits the element — no "Missing" placeholders on the public page. */
 const exifLine = (photo: PhotoView) => {
   const parts = [photo.focal, photo.aperture].filter((p): p is string => p !== null);
-  return parts.length > 0 ? parts.join(' · ') : 'Missing';
+  return parts.length > 0 ? parts.join(' · ') : null;
 };
 
 const sceneNote = (photo: PhotoView) =>
-  photo.description && photo.description !== photo.title ? photo.description : 'Missing';
+  photo.sceneNote ||
+  (photo.description && photo.description !== photo.title ? photo.description : null);
 
-const sceneCategory = (photo: PhotoView) => photo.categoryName || 'Missing';
+const sceneCategory = (photo: PhotoView) => photo.categoryName || null;
 
 type Props = {
   title: string;
@@ -204,9 +207,9 @@ export function ProjectDetailPage({
 
   const hero = photos[0] ?? null;
   const heroName = hero ? hero.title : 'Untitled';
-  const year = publishedAt ? String(new Date(publishedAt).getFullYear()) : 'Missing';
+  const year = publishedAt ? String(new Date(publishedAt).getFullYear()) : null;
   const projectType =
-    hero && hero.categories.length > 0 ? hero.categories.join(' · ') : 'Missing';
+    hero && hero.categories.length > 0 ? hero.categories.join(' · ') : null;
   const scenes = buildScenes(photos);
 
   return (
@@ -273,12 +276,16 @@ export function ProjectDetailPage({
             {title}
           </h1>
           <div className="hero-strip">
-            <span className="mono">
-              TYPE — <b>{projectType}</b>
-            </span>
-            <span className="mono">
-              YEAR — <b>{year}</b>
-            </span>
+            {projectType && (
+              <span className="mono">
+                TYPE — <b>{projectType}</b>
+              </span>
+            )}
+            {year && (
+              <span className="mono">
+                YEAR — <b>{year}</b>
+              </span>
+            )}
             <span className="mono">
               FRAMES — <b>{pad2(photoCount)} SELECTS</b>
             </span>
@@ -287,12 +294,14 @@ export function ProjectDetailPage({
       </section>
 
       {/* ── statement ── */}
-      <section className="statement">
-        <div className="rule fade" />
-        <div className="fade">
-          <p>{description || 'Missing'}</p>
-        </div>
-      </section>
+      {description && (
+        <section className="statement">
+          <div className="rule fade" />
+          <div className="fade">
+            <p>{description}</p>
+          </div>
+        </section>
+      )}
 
       {photos.length === 0 && (
         <p className="psc-empty mono">No photos in this project yet.</p>
@@ -304,9 +313,13 @@ export function ProjectDetailPage({
         const sc = `SC.${pad2(no)}`;
         const id = `sc-${pad2(no)}`;
 
+        const note = sceneNote(photo);
+        const cat = sceneCategory(photo);
+
         if (scene.type === 'panel-left' || scene.type === 'panel-right') {
           const right = scene.type === 'panel-right';
           const [head, tail] = splitTitle(photo.title);
+          const exif = exifLine(photo);
           return (
             <section
               key={photo.id}
@@ -341,12 +354,13 @@ export function ProjectDetailPage({
                 <div className="cap">
                   <span className="mono fno">{sc}</span>
                   {!right && <h3>{photo.title}</h3>}
-                  <span className="mono">{exifLine(photo)}</span>
+                  {exif && <span className="mono">{exif}</span>}
                 </div>
               </div>
               <div className="side fade">
                 <span className="mono">
-                  {sc} — {sceneCategory(photo)}
+                  {sc}
+                  {cat && <> — {cat}</>}
                 </span>
                 {right && (
                   <h3>
@@ -359,7 +373,7 @@ export function ProjectDetailPage({
                     )}
                   </h3>
                 )}
-                <p>{sceneNote(photo)}</p>
+                {note && <p>{note}</p>}
               </div>
             </section>
           );
@@ -380,10 +394,16 @@ export function ProjectDetailPage({
                 </span>
                 <div className="side">
                   <span className="mono">
-                    {sc} — <b>{sceneCategory(photo)}</b>
+                    {sc}
+                    {cat && (
+                      <>
+                        {' — '}
+                        <b>{cat}</b>
+                      </>
+                    )}
                   </span>
                   <h3>{photo.title}</h3>
-                  <p>{sceneNote(photo)}</p>
+                  {note && <p>{note}</p>}
                 </div>
                 <figure className={wipeClass(scene.wipe)} style={figureStyle(photo)}>
                   <img
@@ -418,14 +438,16 @@ export function ProjectDetailPage({
               </span>
               <div className="side">
                 <span className="mono">
-                  {sc} — {sceneCategory(photo)}
+                  {sc}
+                  {cat && <> — {cat}</>}
                 </span>
                 <span className="endmark">
                   End of Roll <i>·</i> {pad2(no)}/{pad2(photoCount)}
                 </span>
-                <p>{sceneNote(photo)}</p>
+                {note && <p>{note}</p>}
                 <span className="mono">
-                  {title} — {year} — {pad2(photoCount)} FRAMES
+                  {title} — {year && <>{year} — </>}
+                  {pad2(photoCount)} FRAMES
                 </span>
               </div>
               <figure className={wipeClass(scene.wipe)} style={figureStyle(photo)}>
@@ -459,7 +481,8 @@ export function ProjectDetailPage({
                 End of Roll <i>·</i> 01/01
               </span>
               <span className="mono">
-                {title} — {year} — 01 FRAMES
+                {title} — {year && <>{year} — </>}
+                01 FRAMES
               </span>
             </div>
           </div>
@@ -471,7 +494,19 @@ export function ProjectDetailPage({
         <div className="psc-ticker-track">
           {[0, 1, 2, 3].map((k) => (
             <span className="mono" key={k}>
-              {title} <i>·</i> {pad2(photoCount)} SCENES <i>·</i> {projectType} <i>·</i> {year}{' '}
+              {title} <i>·</i> {pad2(photoCount)} SCENES
+              {projectType && (
+                <>
+                  {' '}
+                  <i>·</i> {projectType}
+                </>
+              )}
+              {year && (
+                <>
+                  {' '}
+                  <i>·</i> {year}
+                </>
+              )}{' '}
               <i>·</i> GOOD MORNING TAKAYA <i>·</i>
             </span>
           ))}

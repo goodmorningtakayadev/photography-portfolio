@@ -21,9 +21,11 @@ function TitleLines({ title }) {
   );
 }
 
+/* Hide-when-empty: null when the data is absent — the meta line is omitted
+   rather than rendering a "Missing" placeholder. */
 function projectType(project) {
   const cats = project.coverPhoto?.categories ?? [];
-  return cats.length > 0 ? cats.join(' · ') : 'Missing';
+  return cats.length > 0 ? cats.join(' · ') : null;
 }
 
 function projectYear(project) {
@@ -33,7 +35,7 @@ function projectYear(project) {
   if (project.coverPhoto?.date) {
     return String(new Date(project.coverPhoto.date).getFullYear());
   }
-  return 'Missing';
+  return null;
 }
 
 const SelectedWorks = ({ projects }) => {
@@ -59,6 +61,8 @@ const SelectedWorks = ({ projects }) => {
       {projects.length > 0 ? (
         projects.map((project, i) => {
           const photo = project.coverPhoto;
+          const type = projectType(project);
+          const projYear = projectYear(project);
           return (
             <Link
               key={project.id}
@@ -85,12 +89,16 @@ const SelectedWorks = ({ projects }) => {
                 </h3>
               </div>
               <div className="plate-meta">
-                <span className="mono">
-                  TYPE — <b>{projectType(project)}</b>
-                </span>
-                <span className="mono">
-                  YEAR — <b>{projectYear(project)}</b>
-                </span>
+                {type && (
+                  <span className="mono">
+                    TYPE — <b>{type}</b>
+                  </span>
+                )}
+                {projYear && (
+                  <span className="mono">
+                    YEAR — <b>{projYear}</b>
+                  </span>
+                )}
                 <span className="mono">
                   FRAMES — <b>{pad2(project.photoCount)} SELECTS</b>
                 </span>
