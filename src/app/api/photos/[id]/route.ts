@@ -1,7 +1,5 @@
-import { NextResponse } from "next/server";
 import { eq, gte, ne, and, sql } from "drizzle-orm";
 import { z } from "zod";
-import { getSession } from "@/lib/session";
 import { db } from "@/db";
 import { photos, photoCategories } from "@/db/schema";
 import { getPhotoById } from "@/db/queries/photos";
@@ -16,6 +14,7 @@ import {
   revalidateForPhotoChange,
   revalidateForPhotoLifecycle,
 } from "@/lib/revalidation";
+import { adminRoute, apiSuccess, apiError, readJson } from "@/lib/api-route";
 
 export const dynamic = "force-dynamic";
 
@@ -24,27 +23,16 @@ type RouteContext = { params: Promise<{ id: string }> };
 /**
  * GET /api/photos/[id] — Fetch a single photo with categories and variants.
  */
-export async function GET(request: Request, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { data: null, error: "Unauthorized" },
-      { status: 401 },
-    );
-  }
+export const GET = adminRoute<RouteContext>(
+  "Failed to fetch photo",
+  async (request, { params }) => {
+    const { id } = await params;
+    const photo = await getPhotoById(id);
 
-  const { id } = await params;
-  const photo = await getPhotoById(id);
-
-  if (!photo) {
-    return NextResponse.json(
-      { data: null, error: "Photo not found" },
-      { status: 404 },
-    );
-  }
-
-  return NextResponse.json({ data: photo, error: null });
-}
+    if (!photo) return apiError("Photo not found", 404);
+    return apiSuccess(photo);
+  },
+);
 
 /**
  * PATCH /api/photos/[id] — Update photo fields or execute lifecycle action.
@@ -58,85 +46,45 @@ const patchSchema = z.object({
   action: z.enum(["archive", "restore", "reprocess"]).optional(),
 });
 
-export async function PATCH(request: Request, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { data: null, error: "Unauthorized" },
-      { status: 401 },
-    );
-  }
+export const PATCH = adminRoute<RouteContext>(
+  "Internal server error",
+  async (request, { params }) => {
+    const { id } = await params;
 
-  const { id } = await params;
+    const body = await readJson(request, patchSchema);
+    if (!body.ok) return body.response;
+    const { action, categoryIds, ...fields } = body.value;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { data: null, error: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
+    // Verify photo exists
+    const [photo] = await db
+      .select()
+      .from(photos)
+      .where(eq(photos.id, id))
+      .limit(1);
 
-  const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { data: null, error: parsed.error.issues[0]?.message ?? "Invalid input" },
-      { status: 400 },
-    );
-  }
+    if (!photo) return apiError("Photo not found", 404);
 
-  const { action, categoryIds, ...fields } = parsed.data;
-
-  // Verify photo exists
-  const [photo] = await db
-    .select()
-    .from(photos)
-    .where(eq(photos.id, id))
-    .limit(1);
-
-  if (!photo) {
-    return NextResponse.json(
-      { data: null, error: "Photo not found" },
-      { status: 404 },
-    );
-  }
-
-  try {
     // Handle lifecycle actions
     if (action === "archive") {
       const event = await archivePhotos([id]);
       if (event.photoIds.length === 0) {
-        return NextResponse.json(
-          { data: null, error: "Photo already archived" },
-          { status: 400 },
-        );
+        return apiError("Photo already archived", 400);
       }
       revalidateForPhotoLifecycle(event);
-      return NextResponse.json({
-        data: {
-          id,
-          status: "archived",
-          affectedProjectSlugs: event.affectedProjectSlugs,
-        },
-        error: null,
+      return apiSuccess({
+        id,
+        status: "archived",
+        affectedProjectSlugs: event.affectedProjectSlugs,
       });
     }
 
     if (action === "restore") {
       const event = await restorePhotos([id]);
       if (event.photoIds.length === 0) {
-        return NextResponse.json(
-          { data: null, error: "Only archived photos can be restored" },
-          { status: 400 },
-        );
+        return apiError("Only archived photos can be restored", 400);
       }
       revalidateForPhotoLifecycle(event);
-      return NextResponse.json({
-        data: { id, status: "ready" },
-        error: null,
-      });
+      return apiSuccess({ id, status: "ready" });
     }
 
     if (action === "reprocess") {
@@ -147,23 +95,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       });
       switch (result.kind) {
         case "requeued":
-          return NextResponse.json({
-            data: { id, status: "processing" },
-            error: null,
-          });
+          return apiSuccess({ id, status: "processing" });
         case "photo_not_found":
-          return NextResponse.json(
-            { data: null, error: "Photo not found" },
-            { status: 404 },
-          );
+          return apiError("Photo not found", 404);
         case "wrong_status":
-          return NextResponse.json(
-            {
-              data: null,
-              error: "Only failed photos can be reprocessed",
-            },
-            { status: 400 },
-          );
+          return apiError("Only failed photos can be reprocessed", 400);
       }
     }
 
@@ -176,7 +112,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     // Handle gallery sort order with insert-and-shift
     let needsNormalization = false;
-    if (fields.gallerySortOrder !== undefined && fields.gallerySortOrder !== photo.gallerySortOrder) {
+    if (
+      fields.gallerySortOrder !== undefined &&
+      fields.gallerySortOrder !== photo.gallerySortOrder
+    ) {
       const newOrder = fields.gallerySortOrder;
       // Shift all photos at or after the target position up by 1 (excluding this photo)
       await db
@@ -240,77 +179,40 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       : [];
     revalidateForPhotoChange({ affectedProjectSlugs });
 
-    return NextResponse.json({ data: { id, updated: true }, error: null });
-  } catch (error) {
-    console.error("PATCH /api/photos/[id] error:", error);
-    return NextResponse.json(
-      { data: null, error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+    return apiSuccess({ id, updated: true });
+  },
+);
 
 /**
  * DELETE /api/photos/[id] — Permanently delete photo, R2 files, and all references.
  */
-export async function DELETE(request: Request, { params }: RouteContext) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { data: null, error: "Unauthorized" },
-      { status: 401 },
-    );
-  }
+const deleteSchema = z.object({
+  confirm: z.literal(true, {
+    message: "Confirmation required. Send { confirm: true } to proceed.",
+  }),
+});
 
-  const { id } = await params;
+export const DELETE = adminRoute<RouteContext>(
+  "Failed to delete photo",
+  async (request, { params }) => {
+    const { id } = await params;
 
-  let body: { confirm?: boolean };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { data: null, error: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
+    const body = await readJson(request, deleteSchema);
+    if (!body.ok) return body.response;
 
-  if (!body.confirm) {
-    return NextResponse.json(
-      {
-        data: null,
-        error: "Confirmation required. Send { confirm: true } to proceed.",
-      },
-      { status: 400 },
-    );
-  }
-
-  try {
     const event = await permanentlyDeletePhotos([id]);
-
     if (event.photoIds.length === 0) {
-      return NextResponse.json(
-        { data: null, error: "Photo not found" },
-        { status: 404 },
-      );
+      return apiError("Photo not found", 404);
     }
 
     revalidateForPhotoLifecycle(event);
 
-    return NextResponse.json({
-      data: {
-        deleted: true,
-        orphanedKeys:
-          event.orphanedStorageKeys.length > 0
-            ? event.orphanedStorageKeys
-            : undefined,
-      },
-      error: null,
+    return apiSuccess({
+      deleted: true,
+      orphanedKeys:
+        event.orphanedStorageKeys.length > 0
+          ? event.orphanedStorageKeys
+          : undefined,
     });
-  } catch (error) {
-    console.error("DELETE /api/photos/[id] error:", error);
-    return NextResponse.json(
-      { data: null, error: "Failed to delete photo" },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

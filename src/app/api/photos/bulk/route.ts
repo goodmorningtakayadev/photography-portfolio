@@ -1,7 +1,5 @@
-import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { getSession } from "@/lib/session";
 import { db } from "@/db";
 import { photoCategories } from "@/db/schema";
 import {
@@ -13,6 +11,7 @@ import {
   revalidateForPhotoChange,
   revalidateForPhotoLifecycle,
 } from "@/lib/revalidation";
+import { adminRoute, apiSuccess, apiError, readJson } from "@/lib/api-route";
 
 export const dynamic = "force-dynamic";
 
@@ -43,54 +42,33 @@ const bulkSchema = z.discriminatedUnion("action", [
  * POST /api/photos/bulk — Bulk lifecycle operations and category assignment.
  * Lifecycle ops delegate to src/lib/photo-lifecycle.ts.
  */
-export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { data: null, error: "Unauthorized" },
-      { status: 401 },
-    );
-  }
+export const POST = adminRoute(
+  "Bulk operation failed",
+  async (request) => {
+    const body = await readJson(request, bulkSchema);
+    if (!body.ok) return body.response;
+    const parsed = body.value;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { data: null, error: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
-
-  const parsed = bulkSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { data: null, error: parsed.error.issues[0]?.message ?? "Invalid input" },
-      { status: 400 },
-    );
-  }
-
-  try {
-    if (parsed.data.action === "archive") {
-      const event = await archivePhotos(parsed.data.photoIds);
+    if (parsed.action === "archive") {
+      const event = await archivePhotos(parsed.photoIds);
       revalidateForPhotoLifecycle(event);
-      return NextResponse.json({ data: event, error: null });
+      return apiSuccess(event);
     }
 
-    if (parsed.data.action === "restore") {
-      const event = await restorePhotos(parsed.data.photoIds);
+    if (parsed.action === "restore") {
+      const event = await restorePhotos(parsed.photoIds);
       revalidateForPhotoLifecycle(event);
-      return NextResponse.json({ data: event, error: null });
+      return apiSuccess(event);
     }
 
-    if (parsed.data.action === "permanently_delete") {
-      const event = await permanentlyDeletePhotos(parsed.data.photoIds);
+    if (parsed.action === "permanently_delete") {
+      const event = await permanentlyDeletePhotos(parsed.photoIds);
       revalidateForPhotoLifecycle(event);
-      return NextResponse.json({ data: event, error: null });
+      return apiSuccess(event);
     }
 
-    if (parsed.data.action === "categorize") {
-      const { photoIds, categoryIds } = parsed.data;
+    if (parsed.action === "categorize") {
+      const { photoIds, categoryIds } = parsed;
 
       // Build batch: delete all existing categories for each photo,
       // then insert new assignments
@@ -125,21 +103,9 @@ export async function POST(request: Request) {
       // category covers); doesn't change project page contents.
       revalidateForPhotoChange();
 
-      return NextResponse.json({
-        data: { updated: photoIds.length },
-        error: null,
-      });
+      return apiSuccess({ updated: photoIds.length });
     }
 
-    return NextResponse.json(
-      { data: null, error: "Unknown action" },
-      { status: 400 },
-    );
-  } catch (error) {
-    console.error("POST /api/photos/bulk error:", error);
-    return NextResponse.json(
-      { data: null, error: "Bulk operation failed" },
-      { status: 500 },
-    );
-  }
-}
+    return apiError("Unknown action", 400);
+  },
+);

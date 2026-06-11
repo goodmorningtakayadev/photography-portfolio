@@ -1,87 +1,46 @@
-import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { z } from "zod";
 import { confirmUpload } from "@/lib/upload-pipeline";
+import { adminRoute, apiSuccess, apiError, readJson } from "@/lib/api-route";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { data: null, error: "Unauthorized" },
-      { status: 401 },
-    );
-  }
+const confirmSchema = z.object({
+  storageKey: z
+    .string({ message: "Missing required field: storageKey" })
+    .min(1, "Missing required field: storageKey"),
+});
 
-  let body: { storageKey?: string };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { data: null, error: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
+export const POST = adminRoute(
+  "Failed to confirm upload",
+  async (request) => {
+    const body = await readJson(request, confirmSchema);
+    if (!body.ok) return body.response;
 
-  const { storageKey } = body;
-  if (!storageKey) {
-    return NextResponse.json(
-      { data: null, error: "Missing required field: storageKey" },
-      { status: 400 },
-    );
-  }
-
-  try {
     const result = await confirmUpload({
-      storageKey,
+      storageKey: body.value.storageKey,
       baseUrl: new URL(request.url),
       cookie: request.headers.get("cookie"),
     });
 
     switch (result.kind) {
       case "created":
-        return NextResponse.json({
-          data: { id: result.photoId, status: "processing" },
-          error: null,
-        });
+        return apiSuccess({ id: result.photoId, status: "processing" });
       case "invalid_key":
-        return NextResponse.json(
-          {
-            data: null,
-            error:
-              "Invalid storage key format. Expected: photos/<uuid>/original.<ext>",
-          },
-          { status: 400 },
+        return apiError(
+          "Invalid storage key format. Expected: photos/<uuid>/original.<ext>",
+          400,
         );
       case "already_confirmed":
-        return NextResponse.json(
-          { data: null, error: "Upload already confirmed" },
-          { status: 409 },
-        );
+        return apiError("Upload already confirmed", 409);
       case "file_not_found":
-        return NextResponse.json(
-          { data: null, error: "File not found in storage" },
-          { status: 400 },
-        );
+        return apiError("File not found in storage", 400);
       case "file_too_large":
-        return NextResponse.json(
-          {
-            data: null,
-            error: `File exceeds maximum upload size of ${result.maxSize / (1024 * 1024)}MB`,
-          },
-          { status: 400 },
+        return apiError(
+          `File exceeds maximum upload size of ${result.maxSize / (1024 * 1024)}MB`,
+          400,
         );
       case "storage_unavailable":
-        return NextResponse.json(
-          { data: null, error: "Storage service unavailable" },
-          { status: 502 },
-        );
+        return apiError("Storage service unavailable", 502);
     }
-  } catch (error) {
-    console.error("Confirm error:", error);
-    return NextResponse.json(
-      { data: null, error: "Failed to confirm upload" },
-      { status: 500 },
-    );
-  }
-}
+  },
+);

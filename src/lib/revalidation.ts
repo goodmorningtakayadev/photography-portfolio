@@ -64,3 +64,11 @@ export function revalidateForCategoryChange(): void {
   revalidatePath("/");
   revalidatePath("/gallery");
 }
+
+/**
+ * Site settings changed — hero photo / focal point. Settings only surface
+ * on the homepage today; widen here (not in the route) if that changes.
+ */
+export function revalidateForSettingsChange(): void {
+  revalidatePath("/");
+}
