@@ -1,427 +1,812 @@
-/* ══ PROJECT DETAIL — EDITORIAL MAGAZINE ══ */
+/* ════════════════════════════════════════
+   PROJECT DETAIL — "Scenes" template
+   Ported from shannon-project-page.html (handoff source of truth).
+   Fonts/colors mapped to site tokens. Scene slates are plain dark plates
+   (no per-scene color — removed at the user's direction).
+   Scoped under .proj-scenes — page CSS is bundled globally. Ticker classes
+   and keyframes carry a psc- prefix (Home.css owns global .ticker/marquee).
+   The site Header/Footer replace the reference's own chrome.
+   ════════════════════════════════════════ */
 
-.proj-detail {
-  height: 100vh;
-  overflow-y: auto;
-  scroll-snap-type: y mandatory;
-  background: var(--black);
-  color: var(--white);
-  position: relative;
+.proj-scenes {
+  /* lifted primary — hovers, scene numbers, accents. No site equivalent
+     (site --accent IS the handoff primary #7e1420), so it lives here. */
+  --accent-bright: #a51c2c;
+  --ghost: rgba(241, 239, 233, 0.14);
+  background: var(--bg);
+  color: var(--ink);
 }
 
-@media (max-width: 1024px) {
-  .proj-detail {
-    scroll-snap-type: y proximity;
+/* Page-local label role: site .mono only sets the family. */
+.proj-scenes .mono {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+.proj-scenes a:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 4px;
+}
+
+.proj-scenes img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.92) contrast(1.04);
+}
+
+/* ── film grain — page-scoped (site has none outside Home's aurora) ── */
+.proj-scenes .psc-grain {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  z-index: 120; /* above scene content, below the site chrome (200) */
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: psc-grain 7s steps(10) infinite;
+}
+
+@keyframes psc-grain {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-8%, 3%); }
+  40% { transform: translate(-3%, 8%); }
+  60% { transform: translate(6%, 0); }
+  80% { transform: translate(2%, 8%); }
+}
+
+/* ── scene rail (fixed, left edge) ── */
+.proj-scenes .rail {
+  position: fixed;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 99;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.proj-scenes .rail .track {
+  position: relative;
+  width: 1px;
+  height: 160px;
+  background: var(--line);
+}
+
+.proj-scenes .rail .track i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 0%;
+  background: var(--accent-bright);
+}
+
+.proj-scenes .rail .sc b {
+  display: block;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+@media (max-width: 1100px) {
+  .proj-scenes .rail {
+    display: none;
   }
 }
 
-/* ── Progress ── */
+/* ── reveal primitives ── */
+.proj-scenes .wipe {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-.proj-progress {
-  position: fixed;
-  right: 1rem;
+.proj-scenes .wipe--r {
+  clip-path: inset(0 0 0 100%);
+}
+
+.proj-scenes .wipe--u {
+  clip-path: inset(100% 0 0 0);
+}
+
+.proj-scenes .wipe.in {
+  clip-path: inset(0 0 0 0);
+}
+
+.proj-scenes .fade {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.proj-scenes .fade.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* parallax images: inner img is taller than its crop and drifts on scroll */
+.proj-scenes .para {
+  overflow: hidden;
+}
+
+.proj-scenes .para img {
+  height: 118%;
+  will-change: transform;
+}
+
+/* ── SC.01 — hero ── */
+.proj-scenes .hero {
+  /* indent shared by the hero frame, crumb and scene eyebrow */
+  --frame-indent: clamp(56px, 9vw, 160px);
+  position: relative;
+  min-height: 100vh; /* fallback */
+  min-height: 100svh;
+  display: flex;
+  align-items: flex-end;
+  isolation: isolate;
+}
+
+.proj-scenes .hero--empty {
+  min-height: 60vh;
+}
+
+.proj-scenes .hero .para {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.proj-scenes .hero .para::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, var(--bg) 3%, rgba(10, 10, 11, 0.4) 40%, rgba(10, 10, 11, 0.2));
+}
+
+.proj-scenes .hero-inner {
+  width: 100%;
+  padding: 0 28px 48px 96px;
+}
+
+/* contained hero frame — the photo at its natural ratio sitting on the
+   full-bleed copy of itself; height-driven, width follows the inline
+   aspect-ratio (DB dimensions), so the frame never crops */
+.proj-scenes .hero-frame {
+  height: clamp(180px, 34vh, 420px);
+  /* indented clear of the fixed scene rail at the viewport's left edge */
+  margin-left: var(--frame-indent);
+  margin-bottom: 28px;
+  border: 1px solid var(--line); /* defines the frame where it overlaps its own tones */
+  box-shadow: -24px 24px 0 rgba(10, 10, 11, 0.45);
+}
+
+.proj-scenes .crumb {
+  display: inline-flex;
+  gap: 10px;
+  margin-left: var(--frame-indent); /* flush with the hero frame */
+  margin-bottom: 20px;
+  color: var(--ink-mute);
+  transition: color 0.2s;
+}
+
+.proj-scenes .crumb:hover {
+  color: var(--ink);
+}
+
+.proj-scenes .crumb span:first-child {
+  color: var(--accent-bright);
+}
+
+.proj-scenes h1 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(72px, 15vw, 230px);
+  line-height: 0.85;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.proj-scenes h1 .sub {
+  display: block;
+  font-family: var(--f-mono);
+  font-weight: 400;
+  font-stretch: normal;
+  font-size: clamp(11px, 1vw, 14px);
+  letter-spacing: 0.4em;
+  color: var(--accent-bright);
+  margin-left: var(--frame-indent); /* flush with the hero frame */
+  margin-bottom: 18px;
+}
+
+.proj-scenes .hero-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 40px;
+  margin-top: 30px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.proj-scenes .hero-strip .mono b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+@media (max-width: 1100px) {
+  .proj-scenes .hero-inner {
+    padding-left: 28px;
+  }
+}
+
+/* ── statement ── */
+.proj-scenes .statement {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 140px 28px 120px 96px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 48px;
+}
+
+.proj-scenes .statement .rule {
+  width: 64px;
+  height: 1px;
+  background: var(--accent-bright);
+  margin-top: 18px;
+}
+
+.proj-scenes .statement p {
+  font-family: var(--f-body);
+  font-size: clamp(20px, 2.6vw, 34px);
+  line-height: 1.35;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  max-width: 21em;
+}
+
+@media (max-width: 1100px) {
+  .proj-scenes .statement {
+    padding-left: 28px;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+/* ── empty project ── */
+.proj-scenes .psc-empty {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 0 28px 120px 96px;
+}
+
+@media (max-width: 1100px) {
+  .proj-scenes .psc-empty {
+    padding-left: 28px;
+  }
+}
+
+/* ── scenes ── */
+.proj-scenes .scene {
+  position: relative;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 110px 28px 110px 96px;
+}
+
+@media (max-width: 1100px) {
+  .proj-scenes .scene {
+    padding-left: 28px;
+  }
+}
+
+/* giant ghost numerals fill the negative space */
+.proj-scenes .ghost {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(180px, 30vw, 460px);
+  line-height: 0.8;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--ghost);
+}
+
+/* Scene figures never crop: the figure carries the photo's own aspect
+   ratio (inline, from DB dimensions) and the image renders at natural
+   height. The archetype ratios from the reference (4:5 / 16:10 / 3:2)
+   are dropped — and so is scene-image parallax, which requires overdraw. */
+.proj-scenes .scene figure img {
+  height: auto;
+}
+
+/* ── slates — plain dark plates matching the hero frame's backdrop:
+   --bg-deep base + hairline border, no color. (The colored generative
+   aurora system was removed at the user's direction — see git history.) ── */
+
+/* caption strip — scene number + EXIF-style mono */
+.proj-scenes .cap {
+  position: relative;
+  z-index: 2;
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 28px;
+  align-items: baseline;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.proj-scenes .cap .fno {
+  color: var(--accent-bright);
+}
+
+.proj-scenes .cap h3 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(20px, 2.6vw, 34px);
+  text-transform: uppercase;
+  line-height: 1;
+  margin-right: 8px;
+}
+
+/* ── PANEL scenes (archetype B) — accent panel offset behind the image,
+   ghost numeral in the empty side, side text beside the photo ── */
+.proj-scenes .sc-panel {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 0 28px;
+  align-items: center;
+}
+
+.proj-scenes .sc-panel .stage {
+  position: relative;
+  z-index: 1;
+}
+
+.proj-scenes .sc-panel .panel {
+  position: absolute;
+  background: var(--bg-deep);
+  border: 1px solid var(--hair); /* keeps the slate's geometry where the glow fades */
+  z-index: -1;
+  opacity: 0;
+  overflow: hidden;
+  transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s, opacity 0.6s ease 0.15s;
+}
+
+.proj-scenes .sc-panel.played .panel {
+  transform: none;
+  opacity: 1;
+}
+
+.proj-scenes .sc-panel .side {
+  z-index: 2;
+}
+
+.proj-scenes .sc-panel .side .mono {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.proj-scenes .sc-panel .side p {
+  color: var(--ink-mute);
+  max-width: 30ch;
+}
+
+/* B-left: image cols 1-8 at 4:5, panel offsets toward bottom-right */
+.proj-scenes .sc-panel--left .stage {
+  grid-column: 1 / 8;
+}
+
+.proj-scenes .sc-panel--left .panel {
+  inset: 48px -48px -48px 48px;
+  transform: translate(24px, 24px);
+}
+
+.proj-scenes .sc-panel--left .ghost {
+  right: -10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 2px;
-  height: 30vh;
-  background: var(--border);
-  z-index: 100;
-  border-radius: 1px;
 }
 
-.proj-progress-fill {
-  width: 100%;
-  background: var(--ember);
-  border-radius: 1px;
-  transition: height 0.15s linear;
+.proj-scenes .sc-panel--left .side {
+  grid-column: 8 / -1;
+  padding-left: 8px;
 }
 
-/* ── Spread base ── */
+/* B-right: mirrored — image cols 5-12 at 16:10, side text right-aligned */
+.proj-scenes .sc-panel--right .stage {
+  grid-column: 5 / -1;
+}
 
-.spread {
-  min-height: 100vh;
-  scroll-snap-align: start;
+.proj-scenes .sc-panel--right .panel {
+  inset: 48px 48px -48px -48px;
+  transform: translate(-24px, 24px);
+}
+
+.proj-scenes .sc-panel--right .ghost {
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.proj-scenes .sc-panel--right .side {
+  grid-column: 1 / 5;
+  grid-row: 1;
+  padding-right: 8px;
+  text-align: right;
+}
+
+.proj-scenes .sc-panel--right .side h3 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(26px, 3.4vw, 48px);
+  text-transform: uppercase;
+  line-height: 0.95;
+}
+
+.proj-scenes .sc-panel--right .side h3 em {
+  font-style: normal;
+  color: var(--accent-bright);
+}
+
+.proj-scenes .sc-panel--right .side p {
+  margin-top: 14px;
+  margin-left: auto;
+}
+
+/* ── FIELD scene (archetype C) — full accent block, image punched into it
+   with a hard offset shadow, outlined title echo behind ── */
+.proj-scenes .sc-field {
+  padding: 0;
+}
+
+.proj-scenes .sc-field .field {
+  position: relative;
+  margin-left: 96px;
+  background: var(--bg-deep);
+  border: 1px solid var(--hair);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 0 28px;
+  padding: 96px 28px;
+  align-items: center;
+}
+
+@media (max-width: 1100px) {
+  .proj-scenes .sc-field .field {
+    margin-left: 0;
+  }
+}
+
+.proj-scenes .sc-field .field-echo {
+  position: absolute;
+  left: 28px;
+  top: 34px;
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(40px, 7vw, 110px);
+  line-height: 0.9;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(241, 239, 233, 0.18);
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.proj-scenes .sc-field figure {
+  grid-column: 6 / -1;
+  z-index: 1;
+  box-shadow: -28px 28px 0 rgba(10, 10, 11, 0.55);
+}
+
+.proj-scenes .sc-field .side {
+  grid-column: 1 / 6;
+  z-index: 2;
+}
+
+.proj-scenes .sc-field .side .mono {
+  color: rgba(241, 239, 233, 0.72);
+  display: block;
+  margin-bottom: 14px;
+}
+
+.proj-scenes .sc-field .side .mono b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.proj-scenes .sc-field .side h3 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(28px, 4vw, 56px);
+  text-transform: uppercase;
+  line-height: 0.95;
+  color: var(--ink);
+}
+
+.proj-scenes .sc-field .side p {
+  color: rgba(241, 239, 233, 0.72);
+  max-width: 32ch;
+  margin-top: 14px;
+  font-weight: 500;
+}
+
+/* ── END FIELD (archetype D) — closes every project ── */
+.proj-scenes .sc-end .field {
+  position: relative;
+  background: var(--bg-deep);
+  border: 1px solid var(--hair);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 28px;
+  align-items: center;
+  padding: clamp(48px, 7vw, 110px) clamp(28px, 4vw, 72px);
+}
+
+.proj-scenes .sc-end .field-num {
+  /* cropped ghost numeral fills the field's own negative space */
+  position: absolute;
+  right: -24px;
+  bottom: -70px;
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(220px, 26vw, 420px);
+  line-height: 0.8;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(241, 239, 233, 0.18);
+  pointer-events: none;
+  user-select: none;
+}
+
+.proj-scenes .sc-end .side {
+  grid-column: 1 / 8;
+  z-index: 1;
+  display: grid;
+  gap: 20px;
+  justify-items: start;
+  text-align: left;
+}
+
+.proj-scenes .sc-end .side .mono {
+  color: rgba(241, 239, 233, 0.72);
+}
+
+.proj-scenes .sc-end .side p {
+  color: rgba(241, 239, 233, 0.72);
+  max-width: 36ch;
+  font-weight: 500;
+}
+
+.proj-scenes .sc-end .endmark {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(28px, 4.5vw, 64px);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 0.95;
+  color: var(--ink);
+}
+
+.proj-scenes .sc-end .endmark i {
+  font-style: normal;
+  color: var(--accent-bright);
+}
+
+.proj-scenes .sc-end figure {
+  grid-column: 8 / -1;
+  z-index: 1;
+  box-shadow: -24px 24px 0 rgba(10, 10, 11, 0.45);
+}
+
+@media (max-width: 820px) {
+  .proj-scenes .sc-end .field {
+    grid-template-columns: 1fr;
+  }
+
+  .proj-scenes .sc-end .side,
+  .proj-scenes .sc-end figure {
+    grid-column: 1 / -1;
+  }
+
+  .proj-scenes .sc-end figure {
+    width: min(420px, 100%);
+    justify-self: center;
+  }
+}
+
+/* ── ticker ── */
+.proj-scenes .psc-ticker {
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 0;
+}
+
+.proj-scenes .psc-ticker-track {
+  display: flex;
+  gap: 48px;
+  width: max-content;
+  animation: psc-tick 30s linear infinite;
+}
+
+.proj-scenes .psc-ticker-track .mono {
+  white-space: nowrap;
+}
+
+.proj-scenes .psc-ticker-track .mono i {
+  font-style: normal;
+  color: var(--accent-bright);
+}
+
+@keyframes psc-tick {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ── next project ── */
+.proj-scenes .psc-next {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.proj-scenes .psc-next-inner {
+  padding: 130px 28px;
+  max-width: 1480px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity var(--t-slow) var(--ease-out), transform var(--t-slow) var(--ease-out);
+  gap: clamp(28px, 4vw, 56px);
 }
 
-.spread-visible {
-  opacity: 1;
-  transform: translateY(0);
+.proj-scenes .psc-next-copy {
+  min-width: 0;
 }
 
+/* thin full-height slice of the next cover, left of the title — echoes
+   the hero ribbon; widens on hover (the tick-growth idiom, scaled up) */
+.proj-scenes .psc-next-slice {
+  flex: 0 0 auto;
+  width: clamp(64px, 7vw, 112px);
+  align-self: stretch;
+  margin: -130px 0; /* bleed through the block's vertical padding */
+  overflow: hidden;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.proj-scenes .psc-next:hover .psc-next-slice {
+  width: clamp(96px, 11vw, 168px);
+}
+
+.proj-scenes .psc-next .mono {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.proj-scenes .psc-next h2 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: clamp(48px, 9vw, 140px);
+  line-height: 0.9;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.proj-scenes .psc-next:hover h2 {
+  color: var(--accent-bright);
+}
+
+/* ── mobile stacking ≤820px — the reference omits B/C stacking; the
+   acceptance checklist demands it. Keep the design language: offsets and
+   stroked numerals persist, just smaller; side copy drops below media. ── */
+@media (max-width: 820px) {
+  .proj-scenes .sc-panel {
+    display: block;
+  }
+
+  .proj-scenes .sc-panel .ghost {
+    position: static;
+    transform: none;
+    font-size: clamp(88px, 24vw, 150px);
+    line-height: 1;
+    margin-bottom: 8px;
+    opacity: 0.6;
+  }
+
+  .proj-scenes .sc-panel .stage {
+    margin-bottom: 26px;
+  }
+
+  .proj-scenes .sc-panel--left .panel {
+    inset: 24px -16px -16px 24px;
+  }
+
+  .proj-scenes .sc-panel--right .panel {
+    inset: 24px 24px -16px -16px;
+  }
+
+  .proj-scenes .sc-panel .side,
+  .proj-scenes .sc-panel--right .side {
+    padding: 0;
+    text-align: left;
+    max-width: 38em;
+  }
+
+  .proj-scenes .sc-panel--right .side p {
+    margin-left: 0;
+  }
+
+  .proj-scenes .sc-field .field {
+    display: block;
+    padding: 64px 20px;
+  }
+
+  .proj-scenes .sc-field .field-echo {
+    font-size: clamp(56px, 16vw, 110px);
+  }
+
+  .proj-scenes .sc-field figure {
+    margin-top: 26px;
+    box-shadow: -12px 12px 0 rgba(10, 10, 11, 0.5);
+  }
+}
+
+/* ── reduced motion — everything static and visible ── */
 @media (prefers-reduced-motion: reduce) {
-  .spread {
+  .proj-scenes .psc-grain {
+    animation: none;
+  }
+
+  .proj-scenes .psc-ticker-track {
+    animation: none;
+  }
+
+  .proj-scenes .wipe,
+  .proj-scenes .wipe--r,
+  .proj-scenes .wipe--u {
+    clip-path: none;
+    transition: none;
+  }
+
+  .proj-scenes .fade {
     opacity: 1;
     transform: none;
     transition: none;
   }
-}
 
-/* ── Title Card ── */
-
-.spread-title {
-  flex-direction: column;
-  padding: var(--s-page);
-  text-align: center;
-}
-
-.spread-title-neon {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, var(--ember) 50%, transparent 100%);
-  opacity: 0.5;
-}
-
-.spread-title-inner {
-  max-width: 800px;
-}
-
-.spread-title-tag {
-  font-size: 0.6rem;
-  letter-spacing: 0.3em;
-  color: var(--ember);
-  display: block;
-  margin-bottom: 2rem;
-}
-
-.spread-title-h1 {
-  font-family: var(--f-display);
-  font-size: clamp(3rem, 10vw, 8rem);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: -0.04em;
-  line-height: 0.85;
-  margin-bottom: 2rem;
-}
-
-.spread-title-desc {
-  font-family: var(--f-body);
-  font-size: clamp(0.9rem, 1.5vw, 1.15rem);
-  line-height: 1.7;
-  color: var(--white-dim);
-  max-width: 500px;
-  margin: 0 auto 2.5rem;
-}
-
-.spread-title-meta {
-  display: flex;
-  gap: 2rem;
-  justify-content: center;
-}
-
-.spread-title-meta .mono {
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--white-ghost);
-}
-
-.spread-title-scroll {
-  position: absolute;
-  bottom: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.spread-title-scroll .mono {
-  font-size: 0.5rem;
-  letter-spacing: 0.3em;
-  color: var(--white-ghost);
-}
-
-.spread-title-scroll-bar {
-  width: 1px;
-  height: 2.5rem;
-  background: var(--ember);
-  animation: scrollPulse 2s var(--ease-smooth) infinite;
-}
-
-@keyframes scrollPulse {
-  0%, 100% { opacity: 0.3; transform: scaleY(0.6); }
-  50% { opacity: 1; transform: scaleY(1); }
-}
-
-/* ── Hero Spread ── */
-
-.spread-hero {
-  padding: 0;
-  overflow: hidden;
-}
-
-.spread-hero-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  position: absolute;
-  inset: 0;
-}
-
-.spread-hero-caption {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  padding: 1.25rem 1.5rem;
-  background: rgba(11, 11, 11, 0.75);
-  backdrop-filter: blur(12px) saturate(1.2);
-  -webkit-backdrop-filter: blur(12px) saturate(1.2);
-}
-
-.spread-hero-caption .mono {
-  font-size: 0.6rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--white-ghost);
-}
-
-/* ── Diptych ── */
-
-.spread-diptych {
-  padding: 2rem var(--s-page);
-}
-
-.spread-diptych-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  width: 100%;
-  max-width: var(--max-w);
-  align-items: end;
-}
-
-.spread-diptych-left {
-  padding-bottom: 2rem;
-}
-
-.spread-diptych-right {
-  padding-top: 2rem;
-}
-
-.spread-diptych-item img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.spread-diptych-cap {
-  display: block;
-  margin-top: 0.75rem;
-  font-size: 0.55rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--white-ghost);
-}
-
-@media (max-width: 768px) {
-  .spread-diptych-grid {
-    grid-template-columns: 1fr;
+  .proj-scenes .sc-panel .panel {
+    transform: none;
+    opacity: 1;
+    transition: none;
   }
 
-  .spread-diptych-left,
-  .spread-diptych-right {
-    padding: 0;
-  }
-}
-
-/* ── Editorial ── */
-
-.spread-editorial {
-  padding: 2rem var(--s-page);
-}
-
-.spread-editorial-grid {
-  display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: clamp(2rem, 4vw, 4rem);
-  width: 100%;
-  max-width: var(--max-w);
-  align-items: center;
-}
-
-.spread-editorial-right .spread-editorial-grid {
-  grid-template-columns: 2fr 3fr;
-  direction: rtl;
-}
-
-.spread-editorial-right .spread-editorial-grid > * {
-  direction: ltr;
-}
-
-.spread-editorial-photo img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.spread-editorial-text {
-  padding: 2rem 0;
-}
-
-.spread-editorial-rule {
-  width: 3rem;
-  height: 1px;
-  background: var(--ember);
-  margin-bottom: 1.5rem;
-}
-
-.spread-editorial-quote {
-  font-family: var(--f-display);
-  font-size: clamp(1.4rem, 2.5vw, 2.2rem);
-  font-weight: 600;
-  line-height: 1.15;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  margin-bottom: 1rem;
-}
-
-.spread-editorial-body {
-  font-family: var(--f-body);
-  font-size: 0.85rem;
-  line-height: 1.7;
-  color: var(--white-dim);
-  margin-bottom: 1.5rem;
-}
-
-.spread-editorial-meta .mono {
-  font-size: 0.55rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--white-ghost);
-}
-
-@media (max-width: 768px) {
-  .spread-editorial-grid {
-    grid-template-columns: 1fr !important;
-    direction: ltr !important;
+  .proj-scenes .para img {
+    height: 100%;
+    transform: none !important;
   }
 
-  .spread-editorial-text {
-    padding: 0;
+  .proj-scenes .psc-next-slice,
+  .proj-scenes .psc-next h2 {
+    transition: none;
   }
-}
-
-/* ── Detail ── */
-
-.spread-detail {
-  padding: 2rem var(--s-page);
-}
-
-.spread-detail-inner {
-  width: 70%;
-  max-width: 900px;
-  text-align: center;
-}
-
-.spread-detail-inner img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.spread-detail-cap {
-  display: block;
-  margin-top: 1.25rem;
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--white-ghost);
-}
-
-@media (max-width: 768px) {
-  .spread-detail-inner {
-    width: 100%;
-  }
-}
-
-/* ── End Card ── */
-
-.spread-end {
-  flex-direction: column;
-  text-align: center;
-  padding: var(--s-page);
-}
-
-.spread-end-inner {
-  max-width: 500px;
-}
-
-.spread-end-tag {
-  font-size: 0.55rem;
-  letter-spacing: 0.3em;
-  color: var(--white-ghost);
-  display: block;
-  margin-bottom: 1.5rem;
-}
-
-.spread-end-title {
-  font-family: var(--f-display);
-  font-size: clamp(1.2rem, 3vw, 2rem);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  color: var(--white-dim);
-  margin-bottom: 1.5rem;
-}
-
-.spread-end-rule {
-  width: 4rem;
-  height: 1px;
-  background: var(--border);
-  margin: 0 auto 2rem;
-}
-
-.spread-end-nav {
-  display: flex;
-  gap: 3rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-}
-
-.spread-end-link {
-  font-size: 0.65rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--white-ghost);
-  transition: color var(--t-fast) var(--ease-out);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.spread-end-link:hover {
-  color: var(--ember);
-}
-
-.spread-end-next {
-  color: var(--ember);
-}
-
-.spread-end-next:hover {
-  color: var(--ember-hot);
-}
-
-.spread-end-prev {
-  font-size: 0.55rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--white-ghost);
-  transition: color var(--t-fast) var(--ease-out);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.spread-end-prev:hover {
-  color: var(--white);
 }

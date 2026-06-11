@@ -35,6 +35,14 @@ export type PhotoView = {
   date: string;
   published: boolean;
   order: number;
+  /** EXIF-derived display strings (e.g. "56mm", "f/1.8"); populated only
+      where the query fetches exif_data (project detail). */
+  focal: string | null;
+  aperture: string | null;
+  /** Intrinsic pixel dimensions; populated in the project-detail path so
+      scene figures can reserve the photo's natural aspect ratio. */
+  width: number | null;
+  height: number | null;
   _thumbUrl: string | null;
   _displayUrl: string | null;
 };
@@ -68,6 +76,7 @@ export type ProjectDetailView = {
   prevTitle: string | null;
   nextSlug: string | null;
   nextTitle: string | null;
+  nextCoverUrl: string | null;
 };
 
 // ── Operations ──
@@ -164,6 +173,7 @@ export const getProjectViewBySlug = cache(async (
     .select({
       slug: projects.slug,
       title: projects.title,
+      coverPhotoId: projects.coverPhotoId,
     })
     .from(projects)
     .where(eq(projects.isPublished, true))
@@ -171,10 +181,30 @@ export const getProjectViewBySlug = cache(async (
 
   const idx = allProjects.findIndex((p) => p.slug === slug);
   const prev = idx > 0 ? allProjects[idx - 1] : null;
+  // Next is cyclic — the last project wraps to the first (null when alone),
+  // so the detail page's NEXT PROJECT block always has somewhere to go.
   const next =
-    idx >= 0 && idx < allProjects.length - 1 ? allProjects[idx + 1] : null;
+    idx >= 0 && allProjects.length > 1
+      ? allProjects[(idx + 1) % allProjects.length]
+      : null;
 
   const cdnUrl = getCdnUrl();
+
+  // Next project's cover (web_1200) for the NEXT block background.
+  let nextCoverUrl: string | null = null;
+  if (next?.coverPhotoId) {
+    const [variant] = await db
+      .select({ storageKey: photoVariants.storageKey })
+      .from(photoVariants)
+      .where(
+        and(
+          eq(photoVariants.photoId, next.coverPhotoId),
+          eq(photoVariants.variantType, "web_1200"),
+        ),
+      )
+      .limit(1);
+    nextCoverUrl = variant ? `${cdnUrl}/${variant.storageKey}` : null;
+  }
   const photoViews = photoRows.map((r) =>
     buildPhotoView({
       id: r.photo.id,
@@ -188,6 +218,9 @@ export const getProjectViewBySlug = cache(async (
       webKey: variantMap.get(r.photo.id)?.web ?? null,
       categorySlugs: catMap.get(r.photo.id)?.slugs ?? [],
       categoryNames: catMap.get(r.photo.id)?.names ?? [],
+      exifData: r.photo.exifData,
+      width: r.photo.width,
+      height: r.photo.height,
       cdnUrl,
     }),
   );
@@ -212,6 +245,7 @@ export const getProjectViewBySlug = cache(async (
     prevTitle: prev?.title ?? null,
     nextSlug: next?.slug ?? null,
     nextTitle: next?.title ?? null,
+    nextCoverUrl,
   };
 });
 
@@ -508,6 +542,15 @@ function getCdnUrl(): string {
   return process.env.NEXT_PUBLIC_CDN_URL ?? "";
 }
 
+/** Pull a finite number out of the exif-reader jsonb blob's Photo group. */
+function exifNumber(exif: unknown, key: string): number | null {
+  if (typeof exif !== "object" || exif === null) return null;
+  const photo = (exif as Record<string, unknown>)["Photo"];
+  if (typeof photo !== "object" || photo === null) return null;
+  const value = (photo as Record<string, unknown>)[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 function buildPhotoView(args: {
   id: string;
   storageKey: string;
@@ -520,9 +563,16 @@ function buildPhotoView(args: {
   webKey: string | null;
   categorySlugs: string[];
   categoryNames: string[];
+  exifData?: unknown;
+  width?: number | null;
+  height?: number | null;
   cdnUrl: string;
 }): PhotoView {
   const { cdnUrl } = args;
+  const focalMm =
+    exifNumber(args.exifData, "FocalLengthIn35mmFilm") ??
+    exifNumber(args.exifData, "FocalLength");
+  const fNumber = exifNumber(args.exifData, "FNumber");
   return {
     id: args.id,
     title: args.caption || "Untitled",
@@ -534,6 +584,10 @@ function buildPhotoView(args: {
     date: (args.takenAt ?? args.createdAt).toISOString(),
     published: true,
     order: args.gallerySortOrder,
+    focal: focalMm !== null ? `${Math.round(focalMm)}mm` : null,
+    aperture: fNumber !== null ? `f/${Math.round(fNumber * 10) / 10}` : null,
+    width: args.width ?? null,
+    height: args.height ?? null,
     _thumbUrl: args.thumbKey ? `${cdnUrl}/${args.thumbKey}` : null,
     _displayUrl: args.webKey ? `${cdnUrl}/${args.webKey}` : null,
   };
@@ -586,6 +640,10 @@ function toCategoryView(
       date: "",
       published: true,
       order: 0,
+      focal: null,
+      aperture: null,
+      width: null,
+      height: null,
       _thumbUrl: row.coverWebKey ? `${cdnUrl}/${row.coverWebKey}` : null,
       _displayUrl: null,
     },

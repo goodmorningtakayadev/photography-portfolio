@@ -54,6 +54,10 @@ export default async function ProjectDetailRoute({
 
   return (
     <ProjectDetailPage
+      /* key forces a remount on client navigation between projects —
+         the page's one-shot reveal/rail/parallax effects must re-run for
+         the new scene nodes or images stay hidden behind their clip-path */
+      key={project.slug}
       title={project.title}
       slug={project.slug}
       description={project.description}
@@ -71,6 +75,7 @@ export default async function ProjectDetailRoute({
           ? { slug: project.nextSlug, title: project.nextTitle }
           : null
       }
+      nextCoverUrl={project.nextCoverUrl}
     />
   );
 }

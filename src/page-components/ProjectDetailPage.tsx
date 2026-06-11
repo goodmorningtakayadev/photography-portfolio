@@ -1,74 +1,90 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { getImageUrl, getImageSrcSet, getFallbackUrl, getAltText } from '../utils/imageHelpers';
 import type { PhotoView } from '@/lib/public-views';
 import './ProjectDetailPage.css';
 
-type SpreadType = 'title' | 'hero' | 'diptych' | 'editorial' | 'detail' | 'end';
+const pad2 = (n: number) => String(n).padStart(2, '0');
 
-type Spread = {
-  type: SpreadType;
-  photos: PhotoView[];
-  editorialSide?: 'left' | 'right';
+/* ── Composition algorithm (handoff §4) ──
+   photos[0] = hero; middle photos alternate Panel/Field starting B-left,
+   panel sides alternating; the last photo is always the End Field. Wipe
+   directions: B-left from-left, B-right from-right, Field opposite of the
+   previous horizontal wipe, End from below — Shannon-exact. */
+type Wipe = 'left' | 'right' | 'up';
+
+type Scene = {
+  type: 'panel-left' | 'panel-right' | 'field' | 'end';
+  photo: PhotoView;
+  no: number;
+  wipe: Wipe;
 };
 
-function buildSpreads(photos: PhotoView[]): Spread[] {
-  const spreads: Spread[] = [{ type: 'title', photos: [] }];
+/* Scene figures show the whole frame — the figure reserves the photo's own
+   aspect ratio (no crop, no layout shift). Only the hero crops (full-bleed). */
+const figureStyle = (photo: PhotoView): React.CSSProperties | undefined =>
+  photo.width && photo.height
+    ? { aspectRatio: `${photo.width} / ${photo.height}` }
+    : undefined;
 
-  if (photos.length === 0) {
-    spreads.push({ type: 'end', photos: [] });
-    return spreads;
-  }
-
-  // First photo is always hero
-  spreads.push({ type: 'hero', photos: [photos[0]] });
-
-  const cycle: SpreadType[] = ['diptych', 'editorial', 'detail', 'hero'];
-  let cycleIdx = 0;
-  let photoIdx = 1;
-  let editorialFlip = false;
-
-  while (photoIdx < photos.length) {
-    const remaining = photos.length - photoIdx;
-    let template = cycle[cycleIdx % cycle.length];
-
-    // Skip diptych if fewer than 2 photos remain
-    if (template === 'diptych' && remaining < 2) {
-      cycleIdx++;
-      template = cycle[cycleIdx % cycle.length];
-      if (template === 'diptych' && remaining < 2) template = 'detail';
-    }
-
-    if (template === 'diptych') {
-      spreads.push({
-        type: 'diptych',
-        photos: [photos[photoIdx], photos[photoIdx + 1]],
+function buildScenes(photos: PhotoView[]): Scene[] {
+  const n = photos.length;
+  if (n < 2) return [];
+  const scenes: Scene[] = [];
+  let panelRight = false;
+  let wantPanel = true;
+  let prevHorizontal: 'left' | 'right' = 'left';
+  for (let i = 1; i < n - 1; i++) {
+    const no = i + 1;
+    if (wantPanel) {
+      const wipe: Wipe = panelRight ? 'right' : 'left';
+      scenes.push({
+        type: panelRight ? 'panel-right' : 'panel-left',
+        photo: photos[i],
+        no,
+        wipe,
       });
-      photoIdx += 2;
-    } else if (template === 'editorial') {
-      spreads.push({
-        type: 'editorial',
-        photos: [photos[photoIdx]],
-        editorialSide: editorialFlip ? 'right' : 'left',
-      });
-      editorialFlip = !editorialFlip;
-      photoIdx += 1;
-    } else if (template === 'detail') {
-      spreads.push({ type: 'detail', photos: [photos[photoIdx]] });
-      photoIdx += 1;
+      prevHorizontal = wipe;
+      panelRight = !panelRight;
     } else {
-      // hero
-      spreads.push({ type: 'hero', photos: [photos[photoIdx]] });
-      photoIdx += 1;
+      const wipe: Wipe = prevHorizontal === 'left' ? 'right' : 'left';
+      scenes.push({ type: 'field', photo: photos[i], no, wipe });
+      prevHorizontal = wipe;
     }
-    cycleIdx++;
+    wantPanel = !wantPanel;
   }
-
-  spreads.push({ type: 'end', photos: [] });
-  return spreads;
+  scenes.push({
+    type: 'end',
+    photo: photos[n - 1],
+    no: n,
+    wipe: 'up',
+  });
+  return scenes;
 }
+
+/* Display titles break at the midpoint; B-right titles carry the second
+   half in an accent <em> ("Leg's Length<br><em>Away II</em>"). */
+function splitTitle(title: string): [string, string | null] {
+  const words = title.trim().split(/\s+/);
+  if (words.length < 2) return [title, null];
+  const cut = Math.ceil(words.length / 2);
+  return [words.slice(0, cut).join(' '), words.slice(cut).join(' ')];
+}
+
+const wipeClass = (wipe: Wipe) =>
+  wipe === 'right' ? 'wipe wipe--r' : wipe === 'up' ? 'wipe wipe--u' : 'wipe';
+
+const exifLine = (photo: PhotoView) => {
+  const parts = [photo.focal, photo.aperture].filter((p): p is string => p !== null);
+  return parts.length > 0 ? parts.join(' · ') : 'Missing';
+};
+
+const sceneNote = (photo: PhotoView) =>
+  photo.description && photo.description !== photo.title ? photo.description : 'Missing';
+
+const sceneCategory = (photo: PhotoView) => photo.categoryName || 'Missing';
 
 type Props = {
   title: string;
@@ -80,6 +96,7 @@ type Props = {
   photoCount: number;
   prevProject: { slug: string; title: string } | null;
   nextProject: { slug: string; title: string } | null;
+  nextCoverUrl: string | null;
 };
 
 export function ProjectDetailPage({
@@ -88,249 +105,395 @@ export function ProjectDetailPage({
   publishedAt,
   photos,
   photoCount,
-  prevProject,
   nextProject,
+  nextCoverUrl,
 }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
-  const [visibleSections, setVisibleSections] = useState<Set<number>>(new Set([0]));
+  const rootRef = useRef<HTMLDivElement>(null);
+  const railNoRef = useRef<HTMLElement>(null);
+  const railNameRef = useRef<HTMLSpanElement>(null);
+  const railBarRef = useRef<HTMLElement>(null);
 
-  const spreads = buildSpreads(photos);
-
-  // Scroll progress
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const root = rootRef.current;
+    if (!root) return;
 
-    const onScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const p = scrollHeight - clientHeight;
-      setProgress(p > 0 ? scrollTop / p : 0);
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // reveals (wipes + fades) — one-shot; panels follow their image.
+    // Chromium zeroes the intersection rect of an element fully clipped by
+    // its OWN clip-path, so a `.wipe` observed directly never intersects
+    // (the reference HTML has this bug). Observe each wipe's unclipped
+    // parent as a proxy instead; fades observe themselves. A fade can be a
+    // wipe's parent (field scenes), so one observed node may reveal several.
+    const revealMap = new Map<Element, Element[]>();
+    const register = (observed: Element, target: Element) => {
+      const list = revealMap.get(observed);
+      if (list) list.push(target);
+      else revealMap.set(observed, [target]);
     };
+    root.querySelectorAll('.fade').forEach((el) => register(el, el));
+    root.querySelectorAll('.wipe').forEach((el) => register(el.parentElement ?? el, el));
+    const revealIO = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          revealMap.get(entry.target)?.forEach((target) => {
+            target.classList.add('in');
+            target.closest('[data-panel-scene]')?.classList.add('played');
+          });
+          revealIO.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.18 },
+    );
+    revealMap.forEach((_targets, observed) => revealIO.observe(observed));
 
-    container.addEventListener('scroll', onScroll, { passive: true });
-    return () => container.removeEventListener('scroll', onScroll);
-  }, []);
-
-  // IntersectionObserver for reveal
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const sections = container.querySelectorAll('[data-spread]');
-    const observer = new IntersectionObserver(
+    // scene rail — active scene = section crossing the viewport's middle band
+    const sceneIO = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const idx = Number(entry.target.getAttribute('data-spread'));
-            setVisibleSections((prev) => new Set(prev).add(idx));
+            const target = entry.target as HTMLElement;
+            if (railNoRef.current) railNoRef.current.textContent = target.dataset.scene ?? '';
+            if (railNameRef.current) railNameRef.current.textContent = target.dataset.name ?? '';
           }
         });
       },
-      { root: container, threshold: 0.2 },
+      { rootMargin: '-45% 0px -45% 0px' },
     );
+    root.querySelectorAll<HTMLElement>('[data-scene]').forEach((s) => sceneIO.observe(s));
 
-    sections.forEach((s) => observer.observe(s));
-    return () => observer.disconnect();
-  }, [spreads.length]);
-
-  // Keyboard navigation
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      const sections = container.querySelectorAll('[data-spread]');
-      const containerRect = container.getBoundingClientRect();
-      const currentScroll = container.scrollTop;
-
-      // Find current section
-      let currentIdx = 0;
-      sections.forEach((s, i) => {
-        if ((s as HTMLElement).offsetTop <= currentScroll + 10) currentIdx = i;
+    // parallax + rail progress — single rAF, passive listener, skip offscreen
+    const paras = [...root.querySelectorAll<HTMLImageElement>('img[data-para]')];
+    let rafId = 0;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      rafId = requestAnimationFrame(() => {
+        const vh = window.innerHeight;
+        const doc = document.documentElement;
+        if (railBarRef.current) {
+          const max = doc.scrollHeight - vh;
+          const pct = max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0;
+          railBarRef.current.style.height = `${pct}%`;
+        }
+        if (!reduceMotion) {
+          for (const img of paras) {
+            const wrap = img.parentElement;
+            if (!wrap) continue;
+            const rect = wrap.getBoundingClientRect();
+            if (rect.bottom < 0 || rect.top > vh) continue;
+            const center = (rect.top + rect.height / 2 - vh / 2) / vh;
+            img.style.transform = `translateY(${center * -100 * parseFloat(img.dataset.para || '0')}px)`;
+          }
+        }
+        ticking = false;
       });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
 
-      const targetIdx = e.key === 'ArrowDown'
-        ? Math.min(currentIdx + 1, sections.length - 1)
-        : Math.max(currentIdx - 1, 0);
-
-      sections[targetIdx]?.scrollIntoView({ behavior: 'smooth' });
-    }
+    return () => {
+      revealIO.disconnect();
+      sceneIO.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
-
-  const publishedYear = publishedAt ? new Date(publishedAt).getFullYear() : null;
+  const hero = photos[0] ?? null;
+  const heroName = hero ? hero.title : 'Untitled';
+  const year = publishedAt ? String(new Date(publishedAt).getFullYear()) : 'Missing';
+  const projectType =
+    hero && hero.categories.length > 0 ? hero.categories.join(' · ') : 'Missing';
+  const scenes = buildScenes(photos);
 
   return (
-    <div className="proj-detail" ref={containerRef}>
-      {/* Progress indicator */}
-      <div className="proj-progress" aria-hidden="true">
-        <div className="proj-progress-fill" style={{ height: `${progress * 100}%` }} />
-      </div>
+    <div className="proj-scenes" ref={rootRef}>
+      <div className="psc-grain" aria-hidden="true" />
 
-      {/* Spreads */}
-      {spreads.map((spread, i) => {
-        const isVisible = visibleSections.has(i);
-        const revealClass = isVisible ? 'spread-visible' : '';
+      {photos.length > 0 && (
+        <aside className="rail" aria-hidden="true">
+          <span className="mono sc">
+            <b ref={railNoRef}>SC.01</b>
+            <span ref={railNameRef}>{heroName}</span>
+          </span>
+          <div className="track">
+            <i ref={railBarRef} />
+          </div>
+          <span className="mono">{pad2(photoCount)} SCENES</span>
+        </aside>
+      )}
 
-        if (spread.type === 'title') {
-          return (
-            <section key={i} data-spread={i} className={`spread spread-title ${revealClass}`} aria-label="Project title">
-              <div className="spread-title-inner">
-                <div className="spread-title-neon" />
-                <span className="spread-title-tag mono">PROJECT</span>
-                <h1 className="spread-title-h1">{title}</h1>
-                {description && <p className="spread-title-desc">{description}</p>}
-                <div className="spread-title-meta">
-                  <span className="mono">{photoCount} {photoCount === 1 ? 'photo' : 'photos'}</span>
-                  {publishedYear && <span className="mono">{publishedYear}</span>}
-                </div>
-              </div>
-              <div className="spread-title-scroll">
-                <span className="mono">SCROLL</span>
-                <span className="spread-title-scroll-bar" />
-              </div>
-            </section>
-          );
-        }
-
-        if (spread.type === 'hero') {
-          const photo = spread.photos[0];
-          return (
-            <section key={i} data-spread={i} className={`spread spread-hero ${revealClass}`} aria-label={`Photo: ${photo.title}`}>
+      {/* ── SC.01 — hero ── */}
+      <section
+        className={`hero ${hero ? '' : 'hero--empty'}`}
+        id="sc-01"
+        data-scene="SC.01"
+        data-name={heroName}
+      >
+        {hero && (
+          <div className="para">
+            <img
+              data-para="0.12"
+              src={getImageUrl(hero, 'full')}
+              alt={getAltText(hero)}
+              fetchPriority="high"
+              onError={(e) => {
+                const display = getImageUrl(hero, 'display');
+                if (e.currentTarget.src !== display) e.currentTarget.src = display;
+              }}
+            />
+          </div>
+        )}
+        <div className="hero-inner">
+          <Link className="crumb mono" href="/projects">
+            <span>←</span>
+            <span>All projects</span>
+          </Link>
+          {hero && (
+            /* contained copy of the hero frame floating over its own
+               full-bleed blow-up; decorative duplicate, so no alt */
+            <figure className="hero-frame" style={figureStyle(hero)} aria-hidden="true">
               <img
-                src={photo.url}
-                srcSet={getImageSrcSet(photo)}
-                sizes="100vw"
-                alt={getAltText(photo)}
-                className="spread-hero-img"
-                loading={i <= 2 ? 'eager' : 'lazy'}
-                onError={(e) => { (e.target as HTMLImageElement).srcset = ''; (e.target as HTMLImageElement).src = getFallbackUrl(photo); }}
+                src={getImageUrl(hero, 'display')}
+                srcSet={getImageSrcSet(hero)}
+                sizes="40vw"
+                alt=""
+                onError={(e) => {
+                  e.currentTarget.srcset = '';
+                  e.currentTarget.src = getFallbackUrl(hero);
+                }}
               />
-              <div className="spread-hero-caption">
-                <span className="mono">{photo.title}</span>
-              </div>
-            </section>
-          );
-        }
+            </figure>
+          )}
+          <h1>
+            <span className="sub">SC.01 — {heroName}</span>
+            {title}
+          </h1>
+          <div className="hero-strip">
+            <span className="mono">
+              TYPE — <b>{projectType}</b>
+            </span>
+            <span className="mono">
+              YEAR — <b>{year}</b>
+            </span>
+            <span className="mono">
+              FRAMES — <b>{pad2(photoCount)} SELECTS</b>
+            </span>
+          </div>
+        </div>
+      </section>
 
-        if (spread.type === 'diptych') {
-          const [left, right] = spread.photos;
-          return (
-            <section key={i} data-spread={i} className={`spread spread-diptych ${revealClass}`} aria-label="Photo pair">
-              <div className="spread-diptych-grid">
-                <div className="spread-diptych-item spread-diptych-left">
-                  <img
-                    src={getImageUrl(left, 'display')}
-                    srcSet={getImageSrcSet(left)}
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    alt={getAltText(left)}
-                    loading="lazy"
-                    onError={(e) => { (e.target as HTMLImageElement).srcset = ''; (e.target as HTMLImageElement).src = getFallbackUrl(left); }}
-                  />
-                  <span className="spread-diptych-cap mono">{left.title}</span>
-                </div>
-                <div className="spread-diptych-item spread-diptych-right">
-                  <img
-                    src={getImageUrl(right, 'display')}
-                    srcSet={getImageSrcSet(right)}
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    alt={getAltText(right)}
-                    loading="lazy"
-                    onError={(e) => { (e.target as HTMLImageElement).srcset = ''; (e.target as HTMLImageElement).src = getFallbackUrl(right); }}
-                  />
-                  <span className="spread-diptych-cap mono">{right.title}</span>
-                </div>
-              </div>
-            </section>
-          );
-        }
+      {/* ── statement ── */}
+      <section className="statement">
+        <div className="rule fade" />
+        <div className="fade">
+          <p>{description || 'Missing'}</p>
+        </div>
+      </section>
 
-        if (spread.type === 'editorial') {
-          const photo = spread.photos[0];
-          const isRight = spread.editorialSide === 'right';
+      {photos.length === 0 && (
+        <p className="psc-empty mono">No photos in this project yet.</p>
+      )}
+
+      {/* ── scenes ── */}
+      {scenes.map((scene) => {
+        const { photo, no } = scene;
+        const sc = `SC.${pad2(no)}`;
+        const id = `sc-${pad2(no)}`;
+
+        if (scene.type === 'panel-left' || scene.type === 'panel-right') {
+          const right = scene.type === 'panel-right';
+          const [head, tail] = splitTitle(photo.title);
           return (
-            <section key={i} data-spread={i} className={`spread spread-editorial ${isRight ? 'spread-editorial-right' : ''} ${revealClass}`} aria-label={`Photo: ${photo.title}`}>
-              <div className="spread-editorial-grid">
-                <div className="spread-editorial-photo">
+            <section
+              key={photo.id}
+              className={`scene sc-panel ${right ? 'sc-panel--right' : 'sc-panel--left'}`}
+              id={id}
+              data-scene={sc}
+              data-name={photo.title}
+              data-panel-scene=""
+            >
+              <div className="ghost" aria-hidden="true">
+                {pad2(no)}
+              </div>
+              <div className="stage">
+                <div className="panel" />
+                <figure className={wipeClass(scene.wipe)} style={figureStyle(photo)}>
                   <img
+                    loading="lazy"
                     src={getImageUrl(photo, 'display')}
                     srcSet={getImageSrcSet(photo)}
-                    sizes="(max-width: 768px) 100vw, 60vw"
+                    sizes={
+                      right
+                        ? '(max-width: 820px) calc(100vw - 56px), min(67vw, 990px)'
+                        : '(max-width: 820px) calc(100vw - 56px), min(58vw, 860px)'
+                    }
                     alt={getAltText(photo)}
-                    loading="lazy"
-                    onError={(e) => { (e.target as HTMLImageElement).srcset = ''; (e.target as HTMLImageElement).src = getFallbackUrl(photo); }}
+                    onError={(e) => {
+                      e.currentTarget.srcset = '';
+                      e.currentTarget.src = getFallbackUrl(photo);
+                    }}
                   />
+                </figure>
+                <div className="cap">
+                  <span className="mono fno">{sc}</span>
+                  {!right && <h3>{photo.title}</h3>}
+                  <span className="mono">{exifLine(photo)}</span>
                 </div>
-                <div className="spread-editorial-text">
-                  <div className="spread-editorial-rule" />
-                  <p className="spread-editorial-quote">{photo.title}</p>
-                  {photo.description && photo.description !== photo.title && (
-                    <p className="spread-editorial-body">{photo.description}</p>
-                  )}
-                  <div className="spread-editorial-meta">
-                    {photo.categoryName && <span className="mono">{photo.categoryName}</span>}
-                  </div>
-                </div>
+              </div>
+              <div className="side fade">
+                <span className="mono">
+                  {sc} — {sceneCategory(photo)}
+                </span>
+                {right && (
+                  <h3>
+                    {head}
+                    {tail && (
+                      <>
+                        <br />
+                        <em>{tail}</em>
+                      </>
+                    )}
+                  </h3>
+                )}
+                <p>{sceneNote(photo)}</p>
               </div>
             </section>
           );
         }
 
-        if (spread.type === 'detail') {
-          const photo = spread.photos[0];
+        if (scene.type === 'field') {
           return (
-            <section key={i} data-spread={i} className={`spread spread-detail ${revealClass}`} aria-label={`Photo: ${photo.title}`}>
-              <div className="spread-detail-inner">
+            <section
+              key={photo.id}
+              className="scene sc-field"
+              id={id}
+              data-scene={sc}
+              data-name={photo.title}
+            >
+              <div className="field fade">
+                <span className="field-echo" aria-hidden="true">
+                  {photo.title}
+                </span>
+                <div className="side">
+                  <span className="mono">
+                    {sc} — <b>{sceneCategory(photo)}</b>
+                  </span>
+                  <h3>{photo.title}</h3>
+                  <p>{sceneNote(photo)}</p>
+                </div>
+                <figure className={wipeClass(scene.wipe)} style={figureStyle(photo)}>
+                  <img
+                    loading="lazy"
+                    src={getImageUrl(photo, 'display')}
+                    srcSet={getImageSrcSet(photo)}
+                    sizes="(max-width: 820px) calc(100vw - 96px), min(56vw, 830px)"
+                    alt={getAltText(photo)}
+                    onError={(e) => {
+                      e.currentTarget.srcset = '';
+                      e.currentTarget.src = getFallbackUrl(photo);
+                    }}
+                  />
+                </figure>
+              </div>
+            </section>
+          );
+        }
+
+        // end field
+        return (
+          <section
+            key={photo.id}
+            className="scene sc-end"
+            id={id}
+            data-scene={sc}
+            data-name={photo.title}
+          >
+            <div className="field fade">
+              <span className="field-num" aria-hidden="true">
+                {pad2(no)}
+              </span>
+              <div className="side">
+                <span className="mono">
+                  {sc} — {sceneCategory(photo)}
+                </span>
+                <span className="endmark">
+                  End of Roll <i>·</i> {pad2(no)}/{pad2(photoCount)}
+                </span>
+                <p>{sceneNote(photo)}</p>
+                <span className="mono">
+                  {title} — {year} — {pad2(photoCount)} FRAMES
+                </span>
+              </div>
+              <figure className={wipeClass(scene.wipe)} style={figureStyle(photo)}>
                 <img
+                  loading="lazy"
                   src={getImageUrl(photo, 'display')}
                   srcSet={getImageSrcSet(photo)}
-                  sizes="(max-width: 768px) 100vw, 70vw"
+                  sizes="(max-width: 820px) min(420px, calc(100vw - 96px)), min(40vw, 590px)"
                   alt={getAltText(photo)}
-                  loading="lazy"
-                  onError={(e) => { (e.target as HTMLImageElement).srcset = ''; (e.target as HTMLImageElement).src = getFallbackUrl(photo); }}
+                  onError={(e) => {
+                    e.currentTarget.srcset = '';
+                    e.currentTarget.src = getFallbackUrl(photo);
+                  }}
                 />
-                <span className="spread-detail-cap mono">{photo.title}</span>
-              </div>
-            </section>
-          );
-        }
-
-        if (spread.type === 'end') {
-          return (
-            <section key={i} data-spread={i} className={`spread spread-end ${revealClass}`} aria-label="End of project">
-              <div className="spread-end-inner">
-                <span className="spread-end-tag mono">END</span>
-                <h2 className="spread-end-title">{title}</h2>
-                <div className="spread-end-rule" />
-                <div className="spread-end-nav">
-                  <Link href="/projects" className="spread-end-link mono">
-                    <span>&larr;</span> All Projects
-                  </Link>
-                  {nextProject && (
-                    <Link href={`/projects/${nextProject.slug}`} className="spread-end-link spread-end-next mono">
-                      {nextProject.title} <span>&rarr;</span>
-                    </Link>
-                  )}
-                </div>
-                {prevProject && (
-                  <Link href={`/projects/${prevProject.slug}`} className="spread-end-prev mono">
-                    <span>&larr;</span> {prevProject.title}
-                  </Link>
-                )}
-              </div>
-            </section>
-          );
-        }
-
-        return null;
+              </figure>
+            </div>
+          </section>
+        );
       })}
 
+      {/* N=1 — the hero is the only frame; close the roll without a figure */}
+      {photos.length === 1 && (
+        <section className="scene sc-end">
+          <div className="field fade">
+            <span className="field-num" aria-hidden="true">
+              01
+            </span>
+            <div className="side">
+              <span className="mono">SC.01 — END</span>
+              <span className="endmark">
+                End of Roll <i>·</i> 01/01
+              </span>
+              <span className="mono">
+                {title} — {year} — 01 FRAMES
+              </span>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── ticker ── */}
+      <div className="psc-ticker" aria-hidden="true">
+        <div className="psc-ticker-track">
+          {[0, 1, 2, 3].map((k) => (
+            <span className="mono" key={k}>
+              {title} <i>·</i> {pad2(photoCount)} SCENES <i>·</i> {projectType} <i>·</i> {year}{' '}
+              <i>·</i> GOOD MORNING TAKAYA <i>·</i>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── next project ── */}
+      {nextProject && (
+        <Link className="psc-next" href={`/projects/${nextProject.slug}`}>
+          <div className="psc-next-inner">
+            {nextCoverUrl && (
+              <div className="psc-next-slice" aria-hidden="true">
+                <img loading="lazy" src={nextCoverUrl} alt="" />
+              </div>
+            )}
+            <div className="psc-next-copy">
+              <span className="mono">NEXT PROJECT</span>
+              <h2>{nextProject.title}&nbsp;→</h2>
+            </div>
+          </div>
+        </Link>
+      )}
     </div>
   );
 }
