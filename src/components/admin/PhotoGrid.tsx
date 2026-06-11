@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Category } from "@/db/schema";
 import type { PhotoWithThumb } from "@/db/queries/admin";
+import { cdnUrlFor } from "@/lib/image-url";
 import { StatusBadge } from "./StatusBadge";
 import { PhotoEditModal } from "./PhotoEditModal";
 
@@ -120,8 +121,6 @@ export function PhotoGrid({
       if (bulkActionsTimeoutRef.current) clearTimeout(bulkActionsTimeoutRef.current);
     };
   }, [hasSelection, selectMode]);
-
-  const cdnUrl = process.env.NEXT_PUBLIC_CDN_URL;
 
   // Grid fade-out before navigation
   const [gridFadingOut, setGridFadingOut] = useState(false);
@@ -612,7 +611,7 @@ export function PhotoGrid({
                 <div className="aspect-square relative">
                   {photo.thumbStorageKey ? (
                     <img
-                      src={`${cdnUrl}/${photo.thumbStorageKey}`}
+                      src={cdnUrlFor(photo.thumbStorageKey)}
                       alt={photo.altText || photo.caption || "Photo"}
                       className="w-full h-full object-cover"
                       loading="lazy"

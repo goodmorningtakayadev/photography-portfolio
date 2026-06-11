@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { ALLOWED_UPLOAD_TYPES, MAX_UPLOAD_SIZE } from "@/lib/constants";
+import { cdnUrlFor, variantStorageKey } from "@/lib/image-url";
 
 // --- Types ---
 
@@ -336,9 +337,9 @@ export function UploadDropzone() {
               }
               const { data } = await res.json();
               if (data?.status === "ready") {
-                // Construct CDN URL from known pattern (audit-added)
-                const cdnUrl = process.env.NEXT_PUBLIC_CDN_URL || "";
-                const thumbUrl = `${cdnUrl}/photos/${photoId}/thumb_200.webp`;
+                const thumbUrl = cdnUrlFor(
+                  variantStorageKey(photoId, "thumb_200"),
+                );
                 updateItem(id, { status: "ready", thumbUrl });
                 pollTimersRef.current.delete(id);
               } else if (data?.status === "failed") {

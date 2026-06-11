@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProjectWithMeta } from "@/db/queries/admin";
+import { cdnUrlFor } from "@/lib/image-url";
 
 export function ProjectList({ projects }: { projects: ProjectWithMeta[] }) {
   const router = useRouter();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const cdnUrl = process.env.NEXT_PUBLIC_CDN_URL;
 
   const handleTogglePublish = async (project: ProjectWithMeta) => {
     setActionLoading(project.id);
@@ -101,7 +101,7 @@ export function ProjectList({ projects }: { projects: ProjectWithMeta[] }) {
             <div className="aspect-video relative">
               {project.coverThumbStorageKey ? (
                 <img
-                  src={`${cdnUrl}/${project.coverThumbStorageKey}`}
+                  src={cdnUrlFor(project.coverThumbStorageKey)}
                   alt={`Cover for ${project.title}`}
                   className="w-full h-full object-cover"
                   loading="lazy"

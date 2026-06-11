@@ -21,6 +21,7 @@ import {
   projectPhotos,
 } from "@/db/schema";
 import { getSiteSettings } from "@/db/queries/settings";
+import { cdnUrlFor } from "@/lib/image-url";
 
 // ── Public view types ──
 
@@ -97,15 +98,14 @@ export const getHomepageView = cache(async (): Promise<{
     getSiteSettings(),
   ]);
 
-  const cdnUrl = getCdnUrl();
   const heroPhoto = settings.heroPhotoId
-    ? await fetchHeroPhotoView(settings.heroPhotoId, cdnUrl)
+    ? await fetchHeroPhotoView(settings.heroPhotoId)
     : null;
 
   return {
-    featuredPhotos: photoRows.map((p) => toPhotoView(p, cdnUrl)),
-    categories: categoryRows.map((c) => toCategoryView(c, cdnUrl)),
-    featuredProjects: projectRows.map((p) => toProjectCardView(p, cdnUrl)),
+    featuredPhotos: photoRows.map(toPhotoView),
+    categories: categoryRows.map(toCategoryView),
+    featuredProjects: projectRows.map(toProjectCardView),
     hero: {
       photo: heroPhoto,
       focalX: settings.heroFocalX,
@@ -123,17 +123,15 @@ export const getGalleryView = cache(async (): Promise<{
     fetchCategoriesWithCovers(),
   ]);
 
-  const cdnUrl = getCdnUrl();
   return {
-    photos: photoRows.map((p) => toPhotoView(p, cdnUrl)),
-    categories: categoryRows.map((c) => toCategoryView(c, cdnUrl)),
+    photos: photoRows.map(toPhotoView),
+    categories: categoryRows.map(toCategoryView),
   };
 });
 
 export const listProjectCards = cache(async (): Promise<ProjectCardView[]> => {
   const rows = await fetchProjectCards();
-  const cdnUrl = getCdnUrl();
-  return rows.map((p) => toProjectCardView(p, cdnUrl));
+  return rows.map(toProjectCardView);
 });
 
 export const listPublishedProjectSlugs = cache(async (): Promise<string[]> => {
@@ -191,8 +189,6 @@ export const getProjectViewBySlug = cache(async (
       ? allProjects[(idx + 1) % allProjects.length]
       : null;
 
-  const cdnUrl = getCdnUrl();
-
   // Next project's cover (web_1200) for the NEXT block background.
   let nextCoverUrl: string | null = null;
   if (next?.coverPhotoId) {
@@ -206,7 +202,7 @@ export const getProjectViewBySlug = cache(async (
         ),
       )
       .limit(1);
-    nextCoverUrl = variant ? `${cdnUrl}/${variant.storageKey}` : null;
+    nextCoverUrl = cdnUrlFor(variant?.storageKey ?? null);
   }
   const photoViews = photoRows.map((r) =>
     buildPhotoView({
@@ -225,7 +221,6 @@ export const getProjectViewBySlug = cache(async (
       width: r.photo.width,
       height: r.photo.height,
       sceneNote: r.sceneNote,
-      cdnUrl,
     }),
   );
 
@@ -333,10 +328,7 @@ async function fetchPublishedPhotosWithVariants(
 }
 
 /** Resolve the admin-selected hero photo (any ready photo) to a PhotoView. */
-async function fetchHeroPhotoView(
-  photoId: string,
-  cdnUrl: string,
-): Promise<PhotoView | null> {
+async function fetchHeroPhotoView(photoId: string): Promise<PhotoView | null> {
   const [row] = await db
     .select()
     .from(photos)
@@ -357,7 +349,6 @@ async function fetchHeroPhotoView(
     webKey: variantMap.get(photoId)?.web ?? null,
     categorySlugs: catMap.get(photoId)?.slugs ?? [],
     categoryNames: catMap.get(photoId)?.names ?? [],
-    cdnUrl,
   });
 }
 
@@ -542,10 +533,6 @@ async function fetchProjectCards(limit?: number): Promise<ProjectCardRow[]> {
 
 // ── Internal: converters ──
 
-function getCdnUrl(): string {
-  return process.env.NEXT_PUBLIC_CDN_URL ?? "";
-}
-
 /** Pull a finite number out of the exif-reader jsonb blob's Photo group. */
 function exifNumber(exif: unknown, key: string): number | null {
   if (typeof exif !== "object" || exif === null) return null;
@@ -571,9 +558,7 @@ function buildPhotoView(args: {
   width?: number | null;
   height?: number | null;
   sceneNote?: string | null;
-  cdnUrl: string;
 }): PhotoView {
-  const { cdnUrl } = args;
   const focalMm =
     exifNumber(args.exifData, "FocalLengthIn35mmFilm") ??
     exifNumber(args.exifData, "FocalLength");
@@ -582,7 +567,7 @@ function buildPhotoView(args: {
     id: args.id,
     title: args.caption || "Untitled",
     description: args.altText || args.caption || "",
-    url: cdnUrl ? `${cdnUrl}/${args.storageKey}` : args.storageKey,
+    url: cdnUrlFor(args.storageKey),
     category: args.categorySlugs[0] ?? "",
     categoryName: args.categoryNames[0] ?? "",
     categories: args.categorySlugs,
@@ -594,12 +579,12 @@ function buildPhotoView(args: {
     sceneNote: args.sceneNote ?? null,
     width: args.width ?? null,
     height: args.height ?? null,
-    _thumbUrl: args.thumbKey ? `${cdnUrl}/${args.thumbKey}` : null,
-    _displayUrl: args.webKey ? `${cdnUrl}/${args.webKey}` : null,
+    _thumbUrl: cdnUrlFor(args.thumbKey),
+    _displayUrl: cdnUrlFor(args.webKey),
   };
 }
 
-function toPhotoView(row: FullPhotoRow, cdnUrl: string): PhotoView {
+function toPhotoView(row: FullPhotoRow): PhotoView {
   return buildPhotoView({
     id: row.id,
     storageKey: row.storageKey,
@@ -612,14 +597,10 @@ function toPhotoView(row: FullPhotoRow, cdnUrl: string): PhotoView {
     webKey: row.webStorageKey,
     categorySlugs: row.categorySlugs,
     categoryNames: row.categoryNames,
-    cdnUrl,
   });
 }
 
-function toCategoryView(
-  row: CategoryWithCoverRow,
-  cdnUrl: string,
-): CategoryView {
+function toCategoryView(row: CategoryWithCoverRow): CategoryView {
   if (!row.coverPhotoId || !row.coverStorageKey) {
     return {
       id: row.slug,
@@ -639,7 +620,7 @@ function toCategoryView(
       id: row.coverPhotoId,
       title: row.coverCaption || "Untitled",
       description: row.coverAltText || row.coverCaption || "",
-      url: cdnUrl ? `${cdnUrl}/${row.coverStorageKey}` : row.coverStorageKey,
+      url: cdnUrlFor(row.coverStorageKey),
       category: row.slug,
       categoryName: row.name,
       categories: [row.slug],
@@ -651,16 +632,13 @@ function toCategoryView(
       sceneNote: null,
       width: null,
       height: null,
-      _thumbUrl: row.coverWebKey ? `${cdnUrl}/${row.coverWebKey}` : null,
+      _thumbUrl: cdnUrlFor(row.coverWebKey),
       _displayUrl: null,
     },
   };
 }
 
-function toProjectCardView(
-  row: ProjectCardRow,
-  cdnUrl: string,
-): ProjectCardView {
+function toProjectCardView(row: ProjectCardRow): ProjectCardView {
   const coverPhoto = row.cover
     ? buildPhotoView({
         id: row.cover.id,
@@ -674,7 +652,6 @@ function toProjectCardView(
         webKey: row.coverWebKey,
         categorySlugs: row.coverCategorySlugs,
         categoryNames: row.coverCategoryNames,
-        cdnUrl,
       })
     : null;
 

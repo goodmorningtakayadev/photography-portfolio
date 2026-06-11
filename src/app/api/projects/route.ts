@@ -6,22 +6,9 @@ import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { getAllProjectsAdmin } from "@/db/queries/admin";
 import { revalidateForProjectChange } from "@/lib/revalidation";
+import { slugify, PROJECT_SLUG_MAX } from "@/lib/slug";
 
 export const dynamic = "force-dynamic";
-
-/**
- * Slugify a string for URL-safe project slugs.
- */
-function slugify(name: string): string | null {
-  const slug = name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 200);
-  return slug.length > 0 ? slug : null;
-}
 
 const createSchema = z.object({
   title: z
@@ -85,7 +72,7 @@ export async function POST(request: Request) {
   }
 
   const { title } = parsed.data;
-  const slug = slugify(title);
+  const slug = slugify(title, PROJECT_SLUG_MAX);
 
   if (!slug) {
     return NextResponse.json(

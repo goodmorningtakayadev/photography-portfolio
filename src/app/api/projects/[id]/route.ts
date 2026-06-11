@@ -6,21 +6,11 @@ import { db } from "@/db";
 import { projects, projectPhotos } from "@/db/schema";
 import { getProjectByIdAdmin } from "@/db/queries/admin";
 import { revalidateForProjectChange } from "@/lib/revalidation";
+import { slugify, PROJECT_SLUG_MAX } from "@/lib/slug";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
-
-function slugify(name: string): string | null {
-  const slug = name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 200);
-  return slug.length > 0 ? slug : null;
-}
 
 /**
  * GET /api/projects/[id] — Fetch project with photos and thumb variants.
@@ -116,7 +106,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     updates.title = parsed.data.title;
     // Auto-regenerate slug if title changes and slug not explicitly provided
     if (parsed.data.slug === undefined) {
-      const newSlug = slugify(parsed.data.title);
+      const newSlug = slugify(parsed.data.title, PROJECT_SLUG_MAX);
       if (!newSlug) {
         return NextResponse.json(
           {
@@ -131,7 +121,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   if (parsed.data.slug !== undefined) {
-    const cleanSlug = slugify(parsed.data.slug);
+    const cleanSlug = slugify(parsed.data.slug, PROJECT_SLUG_MAX);
     if (!cleanSlug) {
       return NextResponse.json(
         { data: null, error: "Slug must contain at least one alphanumeric character" },

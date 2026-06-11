@@ -3,6 +3,7 @@ import { encode } from "blurhash";
 import exifReader from "exif-reader";
 import { downloadObject, uploadBuffer } from "@/lib/storage";
 import { VARIANT_CONFIGS } from "@/lib/constants";
+import { variantStorageKey } from "@/lib/image-url";
 
 // --- Types ---
 
@@ -86,11 +87,9 @@ export async function generateVariants(
         .webp({ quality: 80 })
         .toBuffer({ resolveWithObject: true });
 
-      const variantStorageKey = `photos/${photoId}/${variantType}.webp`;
-
       return {
         variantType,
-        storageKey: variantStorageKey,
+        storageKey: variantStorageKey(photoId, variantType),
         buffer: result.data,
         width: result.info.width,
         height: result.info.height,

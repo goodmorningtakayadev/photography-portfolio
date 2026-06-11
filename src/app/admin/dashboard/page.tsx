@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getPhotoStats, getRecentPhotos } from "@/db/queries/admin";
+import { cdnUrlFor } from "@/lib/image-url";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
 export const dynamic = "force-dynamic";
@@ -148,7 +149,7 @@ export default async function DashboardPage() {
               >
                 {photo.thumbStorageKey ? (
                   <img
-                    src={`${process.env.NEXT_PUBLIC_CDN_URL}/${photo.thumbStorageKey}`}
+                    src={cdnUrlFor(photo.thumbStorageKey)}
                     alt={photo.altText || photo.caption || "Photo"}
                     className="w-full h-full object-cover group-hover:scale-[1.06]"
                     loading="lazy"

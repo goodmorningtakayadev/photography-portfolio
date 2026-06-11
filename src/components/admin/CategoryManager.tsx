@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { CategoryWithCount } from "@/db/queries/admin";
+import { slugify, CATEGORY_SLUG_MAX } from "@/lib/slug";
 
 // --- Types ---
 
@@ -23,18 +24,6 @@ export function CategoryManager({
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
   const addInputRef = useRef<HTMLInputElement>(null);
-
-  // --- Slug preview ---
-
-  function slugPreview(name: string): string {
-    return name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 100);
-  }
 
   // --- Error display ---
 
@@ -192,7 +181,7 @@ export function CategoryManager({
 
   // --- Render ---
 
-  const addSlug = slugPreview(newName);
+  const addSlug = slugify(newName, CATEGORY_SLUG_MAX) ?? "";
 
   return (
     <div className="max-w-2xl">

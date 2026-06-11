@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { Category } from "@/db/schema";
 import type { ProjectDetail, PhotoWithThumb } from "@/db/queries/admin";
+import { cdnUrlFor } from "@/lib/image-url";
 
 export function ProjectEditor({
   project,
@@ -15,7 +16,6 @@ export function ProjectEditor({
   categories: Category[];
 }) {
   const router = useRouter();
-  const cdnUrl = process.env.NEXT_PUBLIC_CDN_URL;
 
   // Form state
   const [title, setTitle] = useState(project.title);
@@ -499,7 +499,7 @@ export function ProjectEditor({
                     <div className="aspect-square relative">
                       {photo.thumbStorageKey ? (
                         <img
-                          src={`${cdnUrl}/${photo.thumbStorageKey}`}
+                          src={cdnUrlFor(photo.thumbStorageKey)}
                           alt={
                             photo.altText || photo.caption || "Project photo"
                           }
@@ -662,7 +662,6 @@ export function ProjectEditor({
             (p) => !projectPhotoIds.has(p.id),
           )}
           categories={categories}
-          cdnUrl={cdnUrl}
           onAdd={handleAddPhotos}
           onClose={() => setShowPicker(false)}
           loading={actionLoading}
@@ -677,14 +676,12 @@ export function ProjectEditor({
 function PhotoPickerModal({
   availablePhotos,
   categories,
-  cdnUrl,
   onAdd,
   onClose,
   loading,
 }: {
   availablePhotos: PhotoWithThumb[];
   categories: Category[];
-  cdnUrl: string | undefined;
   onAdd: (photoIds: string[]) => void;
   onClose: () => void;
   loading: boolean;
@@ -782,7 +779,7 @@ function PhotoPickerModal({
                   >
                     {photo.thumbStorageKey ? (
                       <img
-                        src={`${cdnUrl}/${photo.thumbStorageKey}`}
+                        src={cdnUrlFor(photo.thumbStorageKey)}
                         alt={photo.altText || photo.caption || "Photo"}
                         className="w-full h-full object-cover"
                         loading="lazy"

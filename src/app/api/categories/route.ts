@@ -6,24 +6,9 @@ import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { getAllCategories } from "@/db/queries/admin";
 import { revalidateForCategoryChange } from "@/lib/revalidation";
+import { slugify, CATEGORY_SLUG_MAX } from "@/lib/slug";
 
 export const dynamic = "force-dynamic";
-
-/**
- * Slugify a string: lowercase, replace non-alphanumeric with hyphens,
- * collapse consecutive hyphens, trim leading/trailing hyphens.
- * Returns null if result is empty (all special characters).
- */
-function slugify(name: string): string | null {
-  const slug = name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 100); // Truncate to match schema varchar(100)
-  return slug.length > 0 ? slug : null;
-}
 
 // --- Validation ---
 
@@ -89,7 +74,7 @@ export async function POST(request: Request) {
   }
 
   const { name } = parsed.data;
-  const slug = slugify(name);
+  const slug = slugify(name, CATEGORY_SLUG_MAX);
 
   if (!slug) {
     return NextResponse.json(

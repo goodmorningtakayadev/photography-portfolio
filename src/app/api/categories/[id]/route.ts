@@ -5,24 +5,11 @@ import { getSession } from "@/lib/session";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { revalidateForCategoryChange } from "@/lib/revalidation";
+import { slugify, CATEGORY_SLUG_MAX } from "@/lib/slug";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
-
-/**
- * Slugify a string for URL-safe category slugs.
- */
-function slugify(name: string): string | null {
-  const slug = name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 100);
-  return slug.length > 0 ? slug : null;
-}
 
 // --- Validation ---
 
@@ -92,7 +79,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     updates.name = parsed.data.name;
     // Auto-regenerate slug if name changes and slug not explicitly provided
     if (parsed.data.slug === undefined) {
-      const newSlug = slugify(parsed.data.name);
+      const newSlug = slugify(parsed.data.name, CATEGORY_SLUG_MAX);
       if (!newSlug) {
         return NextResponse.json(
           {
@@ -107,7 +94,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   if (parsed.data.slug !== undefined) {
-    const cleanSlug = slugify(parsed.data.slug);
+    const cleanSlug = slugify(parsed.data.slug, CATEGORY_SLUG_MAX);
     if (!cleanSlug) {
       return NextResponse.json(
         { data: null, error: "Slug must contain at least one alphanumeric character" },

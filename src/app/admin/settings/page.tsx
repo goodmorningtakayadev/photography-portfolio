@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getSiteSettings } from "@/db/queries/settings";
 import { getAllPhotosAdmin } from "@/db/queries/admin";
+import { cdnUrlFor } from "@/lib/image-url";
 import { HeroSettingsEditor } from "@/components/admin/HeroSettingsEditor";
 
 export const dynamic = "force-dynamic";
@@ -16,12 +17,11 @@ export default async function SettingsPage() {
     getAllPhotosAdmin({ status: "ready", limit: 200 }),
   ]);
 
-  const cdnUrl = process.env.NEXT_PUBLIC_CDN_URL ?? "";
   const photos = ready.photos.map((p) => ({
     id: p.id,
     caption: p.caption,
-    thumbUrl: p.thumbStorageKey ? `${cdnUrl}/${p.thumbStorageKey}` : null,
-    fullUrl: `${cdnUrl}/${p.storageKey}`,
+    thumbUrl: cdnUrlFor(p.thumbStorageKey),
+    fullUrl: cdnUrlFor(p.storageKey),
   }));
 
   return (
