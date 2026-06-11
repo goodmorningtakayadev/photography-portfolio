@@ -2,18 +2,14 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { ALLOWED_UPLOAD_TYPES, MAX_UPLOAD_SIZE } from "@/lib/constants";
-import { cdnUrlFor, variantStorageKey } from "@/lib/image-url";
+import {
+  startPhotoUpload,
+  type UploadHandle,
+  type UploadStatus,
+} from "@/lib/upload-client";
+import { UPLOAD_STATUS_DISPLAY } from "./status-display";
 
 // --- Types ---
-
-type UploadStatus =
-  | "queued"
-  | "presigning"
-  | "uploading"
-  | "confirming"
-  | "processing"
-  | "ready"
-  | "failed";
 
 interface UploadItem {
   id: string;
@@ -34,45 +30,6 @@ const ACTIVE_STATUSES: UploadStatus[] = [
   "processing",
 ];
 const MAX_CONCURRENT = 3;
-const POLL_INTERVAL = 2000;
-const POLL_TIMEOUT = 120000;
-const XHR_TIMEOUT = 300000; // 5 minutes
-
-// --- Status display config ---
-
-const statusDisplay: Record<
-  UploadStatus,
-  { label: string; className: string }
-> = {
-  queued: {
-    label: "Queued",
-    className: "bg-[rgba(128,122,116,0.15)] text-[var(--white-ghost)]",
-  },
-  presigning: {
-    label: "Preparing",
-    className: "bg-amber-500/20 text-amber-400",
-  },
-  uploading: {
-    label: "Uploading",
-    className: "bg-amber-500/20 text-amber-400",
-  },
-  confirming: {
-    label: "Confirming",
-    className: "bg-amber-500/20 text-amber-400",
-  },
-  processing: {
-    label: "Processing",
-    className: "bg-amber-500/20 text-amber-400",
-  },
-  ready: {
-    label: "Ready",
-    className: "bg-[var(--ember-glow)] text-[var(--ember)]",
-  },
-  failed: {
-    label: "Failed",
-    className: "bg-red-500/20 text-red-400",
-  },
-};
 
 // --- Component ---
 
@@ -85,10 +42,7 @@ export function UploadDropzone() {
   >([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
-  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
-  const pollTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
-    new Map(),
-  );
+  const handlesRef = useRef<Map<string, UploadHandle>>(new Map());
 
   // --- Helpers ---
 
@@ -126,8 +80,7 @@ export function UploadDropzone() {
   useEffect(() => {
     return () => {
       items.forEach((item) => URL.revokeObjectURL(item.preview));
-      pollTimersRef.current.forEach((timer) => clearTimeout(timer));
-      abortControllersRef.current.forEach((ctrl) => ctrl.abort());
+      handlesRef.current.forEach((handle) => handle.cancel());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -228,143 +181,19 @@ export function UploadDropzone() {
     [validateAndAddFiles],
   );
 
-  // --- Upload pipeline per file ---
+  // --- Upload pipeline per file (state machine lives in upload-client) ---
 
   const uploadFile = useCallback(
-    async (item: UploadItem) => {
-      const { id, file } = item;
-
-      // Stage 1: Presign
-      try {
-        updateItem(id, { status: "presigning", progress: 0 });
-        const presignRes = await fetch(
-          `/api/uploads/presign?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`,
-        );
-        if (!presignRes.ok) {
-          const body = await presignRes.json().catch(() => ({}));
-          throw new Error(
-            body.error || `Server returned ${presignRes.status}`,
-          );
-        }
-        const { data: presignData } = await presignRes.json();
-        if (!presignData?.url || !presignData?.storageKey || !presignData?.photoId) {
-          throw new Error("Invalid presign response");
-        }
-
-        updateItem(id, { photoId: presignData.photoId });
-
-        // Stage 2: Upload to R2 via XHR
-        updateItem(id, { status: "uploading", progress: 0 });
-        await new Promise<void>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          const controller = new AbortController();
-          abortControllersRef.current.set(id, controller);
-
-          xhr.timeout = XHR_TIMEOUT;
-
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              const pct = Math.round((e.loaded / e.total) * 100);
-              updateItem(id, { progress: pct });
-            }
-          };
-
-          xhr.onload = () => {
-            abortControllersRef.current.delete(id);
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve();
-            } else {
-              reject(
-                new Error(`R2 returned ${xhr.status}: ${xhr.statusText}`),
-              );
-            }
-          };
-
-          xhr.onerror = () => {
-            abortControllersRef.current.delete(id);
-            reject(new Error("Network error during upload"));
-          };
-
-          xhr.ontimeout = () => {
-            abortControllersRef.current.delete(id);
-            reject(new Error("Upload timed out"));
-          };
-
-          controller.signal.addEventListener("abort", () => {
-            xhr.abort();
-            reject(new Error("Upload aborted"));
-          });
-
-          xhr.open("PUT", presignData.url);
-          xhr.setRequestHeader("Content-Type", file.type);
-          xhr.send(file);
-        });
-
-        // Stage 3: Confirm
-        updateItem(id, { status: "confirming", progress: 100 });
-        const confirmRes = await fetch("/api/uploads/confirm", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ storageKey: presignData.storageKey }),
-        });
-        if (!confirmRes.ok) {
-          const body = await confirmRes.json().catch(() => ({}));
-          throw new Error(
-            `Confirm failed: ${body.error || `status ${confirmRes.status}`}`,
-          );
-        }
-
-        // Stage 4: Poll for processing
-        updateItem(id, { status: "processing", progress: 100 });
-        const startTime = Date.now();
-        const photoId = presignData.photoId;
-
-        const poll = () => {
-          if (Date.now() - startTime > POLL_TIMEOUT) {
-            updateItem(id, {
-              status: "failed",
-              error: "Processing timed out after 2 minutes",
-            });
-            return;
-          }
-
-          const timer = setTimeout(async () => {
-            try {
-              const res = await fetch(`/api/photos/${photoId}`);
-              if (!res.ok) {
-                poll(); // retry on transient failure
-                return;
-              }
-              const { data } = await res.json();
-              if (data?.status === "ready") {
-                const thumbUrl = cdnUrlFor(
-                  variantStorageKey(photoId, "thumb_200"),
-                );
-                updateItem(id, { status: "ready", thumbUrl });
-                pollTimersRef.current.delete(id);
-              } else if (data?.status === "failed") {
-                updateItem(id, {
-                  status: "failed",
-                  error: "Image processing failed",
-                });
-                pollTimersRef.current.delete(id);
-              } else {
-                poll();
-              }
-            } catch {
-              poll(); // retry on network error
-            }
-          }, POLL_INTERVAL);
-
-          pollTimersRef.current.set(id, timer);
-        };
-
-        poll();
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Unknown error";
-        updateItem(id, { status: "failed", error: message });
-      }
+    (item: UploadItem) => {
+      const handle = startPhotoUpload(item.file, {
+        onChange: (state) => updateItem(item.id, state),
+      });
+      handlesRef.current.set(item.id, handle);
+      handle.done.finally(() => {
+        handlesRef.current.delete(item.id);
+      });
+      // Concurrency gates on the upload itself; polling runs in background.
+      return handle.uploaded;
     },
     [updateItem],
   );
@@ -416,16 +245,11 @@ export function UploadDropzone() {
       if (item) URL.revokeObjectURL(item.preview);
       return prev.filter((i) => i.id !== id);
     });
-    // Clean up any active poll/abort
-    const timer = pollTimersRef.current.get(id);
-    if (timer) {
-      clearTimeout(timer);
-      pollTimersRef.current.delete(id);
-    }
-    const ctrl = abortControllersRef.current.get(id);
-    if (ctrl) {
-      ctrl.abort();
-      abortControllersRef.current.delete(id);
+    // Cancel any in-flight upload/polling for this item
+    const handle = handlesRef.current.get(id);
+    if (handle) {
+      handle.cancel();
+      handlesRef.current.delete(id);
     }
   }, []);
 
@@ -654,7 +478,7 @@ function UploadQueueItem({
   onRetry: (id: string) => void;
   onRemove: (id: string) => void;
 }) {
-  const config = statusDisplay[item.status];
+  const config = UPLOAD_STATUS_DISPLAY[item.status];
   const isActive = ACTIVE_STATUSES.includes(item.status);
   const showProgress = item.status === "uploading";
 
